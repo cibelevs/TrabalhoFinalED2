@@ -1,0 +1,74 @@
+1. Introdução
+O presente projeto tem como objetivo o desenvolvimento de um sistema web
+para a companhia fictícia Linhas Aéreas ED-II, voltado à comercialização de 
+voos econômicos nacionais e internacionais. A plataforma será implementada 
+em Python com o framework Flask, buscando conciliar facilidade de uso, 
+segurança de dados e eficiência no gerenciamento de voos e clientes.
+O sistema será dividido em dois módulos principais:
+    • Módulo do Passageiro – acesso público para pesquisa e compra de 
+    passagens;
+    • Módulo Administrativo – acesso restrito para funcionários, voltado à 
+    gestão da companhia.
+2. Objetivos do Sistema
+    • Fornecer uma plataforma digital intuitiva para o usuário final.
+    • Oferecer à companhia aérea ferramentas de gestão de voos e clientes.
+    • Explorar conceitos de estruturas de dados (dicionários, árvores B e 
+    grafos) na prática de programação.
+    • Desenvolver um diferencial inovador definido por cada equipe de 
+    implementação.
+3. Funcionalidades
+    3.1. Módulo do Passageiro
+    ESTRUTURAS DE DADOS II
+    LAED-II
+    O site permitirá ao viajante:
+        • Consultar voos disponíveis para determinado destino;
+        • Simular conexões entre voos utilizando grafos;
+        • Selecionar a melhor opção de trajeto e efetuar a compra de passagens;
+        • Receber um código de reserva associado ao voo ou à lista de voos 
+        escolhidos;
+        • Acumular milhas a cada compra realizada.
+    3.2. Módulo Administrativo
+    O sistema disponibilizará uma interface de gerenciamento para funcionários, 
+    contemplando:
+        • Autenticação de usuários (login/senha) – implementada com 
+        dicionário;
+        • Gestão de voos – cadastrar, editar e excluir voos da companhia. Cada 
+        voo conterá:
+        o Código do voo
+        o Origem
+        o Destino
+        o Milhas percorridas
+        o Preço da passagem
+        o Tipo de aeronave
+        o Número de assentos
+        • Gestão de reservas e compras:
+        o Emissão de códigos de reserva por dicionário;
+        o Controle de assentos disponíveis;
+        o Armazenamento das compras em arquivo.
+        • Gestão de clientes – dados armazenados em arquivo com suporte a 
+        consultas otimizadas via árvores B:
+        o CPF do cliente
+        o Nome do passageiro
+        o Código da reserva (lista de voos)
+        o Data da viagem
+        o Milhas acumuladas
+        o Consultas ordenadas por CPF ou nome;
+        o Busca de cliente por nome específico;
+        o Listagem de clientes por inicial do nome.
+4. Requisitos de Desenvolvimento
+    1. Implementação do dicionário de voos e do dicionário de login/senha.
+        Data entrega: 21/10/2025
+    2. Criação e administração do sistema de vendas de passagens: 
+    arquivos, dicionários e árvores.
+        Data entrega: 18/11/2025
+    3. Integração de grafos para simulação de conexões de voos.
+    4. Implementação de um diferencial inovador, a ser definido pela equipe 
+    (ex.: programa de fidelidade avançado, recomendações de destinos, 
+    comparador de preços, chatbot de atendimento, etc.).
+        Data entrega: 15/12/2025
+    5. Ferramentas e Tecnologias
+        • Linguagem: Python 
+        • Framework: Flask
+        • Estruturas de Dados: Dicionários, Árvores B, Grafos
+        • Armazenamento: Arquivos locais (Passageiros e códigos de reserva)
+        • Bibliotecas adicionais: a definir conforme necessidade
