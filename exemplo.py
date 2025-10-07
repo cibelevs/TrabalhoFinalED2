@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect # <-- Mudar aqui!
 
 app = Flask(__name__)
 
@@ -14,9 +14,32 @@ def carregar_voos():
         return []
 
 
+
+# --- Rota Principal: Tela inicial (login do usuário) ---
+# Esta rota agora é a única definida para '/', exibindo o login.
 @app.route('/')
-def home():
-    return "<h1>Bem-vindo(a) ao Sistema de Voos ✈️</h1><p>Acesse <a href='/voos'>/voos</a> para ver a lista completa.</p>"
+def tela_usuario():
+    # Certifique-se de que o template 'usuario.html' existe na pasta 'templates'
+    return render_template('usuario.html')
+
+
+# --- Processa o login e redireciona ---
+@app.route('/login', methods=['POST'])
+def login():
+    """Processa o formulário de login."""
+    try:
+        nome = request.form['nome'] 
+        senha = request.form['senha']
+    except KeyError:
+        # Se os campos do formulário não forem encontrados
+        return "<h3>Erro: Campos de login ausentes. Verifique o seu 'usuario.html'.</h3>"
+
+
+    # Simulação de verificação de usuário/senha
+    if nome == "admin" and senha == "123":
+        return redirect('/voos') 
+    else:
+        return "<h3>Usuário ou senha incorretos! <a href='/'>Tente novamente</a></h3>"
 
 
 @app.route('/voos')
