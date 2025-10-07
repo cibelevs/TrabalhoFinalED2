@@ -1,0 +1,12 @@
+Voos = [
+    {'codigo': 'ED135', 'preco': 399.99, 'origem': 'Salvador', 'destino': 'São Paulo'},
+    {'codigo': 'ED110', 'preco': 650.00, 'origem': 'Florianópolis', 'destino': 'Rio de Janeiro'},
+    {'codigo': 'ED205', 'preco': 720.50, 'origem': 'Recife', 'destino': 'Brasília'},
+    {'codigo': 'ED178', 'preco': 580.00, 'origem': 'Curitiba', 'destino': 'Fortaleza'},
+    {'codigo': 'ED099', 'preco': 310.75, 'origem': 'Belo Horizonte', 'destino': 'Vitória'},
+    {'codigo': 'ED250', 'preco': 890.90, 'origem': 'Manaus', 'destino': 'São Paulo'},
+    {'codigo': 'ED300', 'preco': 455.50, 'origem': 'Porto Alegre', 'destino': 'Salvador'},
+    {'codigo': 'ED400', 'preco': 999.99, 'origem': 'Rio de Janeiro', 'destino': 'Natal'},
+    {'codigo': 'ED410', 'preco': 540.00, 'origem': 'Fortaleza', 'destino': 'Belém'},
+    {'codigo': 'ED500', 'preco': 780.25, 'origem': 'São Paulo', 'destino': 'Recife'}
+]
