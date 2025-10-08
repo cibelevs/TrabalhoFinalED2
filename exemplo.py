@@ -2,10 +2,10 @@ from flask import Flask, render_template, request, redirect # <-- Mudar aqui!
 
 app = Flask(__name__)
 
-# --- Carrega os voos a partir do arquivo listaVoos.text ---
-def carregar_voos():
+#função para carregar o arquivo
+def carrega_voos():
     try:
-        with open("/home/cibele/Documentos/TrabalhoFinalED2/arquivos/listaVoos.text", "r", encoding="utf-8") as f:
+        with open("arquivos/listaVoos.text", "r", encoding="utf-8") as f:
             conteudo = f.read()
             exec(conteudo, globals())  # Cria a lista Voos
             return globals().get("Voos", [])
@@ -13,14 +13,38 @@ def carregar_voos():
         print("Erro ao carregar voos:", e)
         return []
 
+def adiciona_voos(novo_voo):
+    try:
+        with open("arquivos/listaVoos.text", "a", encoding="utf-8") as f:
+            f.write(f"\nVoos.append({novo_voo})")
+    except Exception as e:
+        print("Erro ao adicionar voo:", e)
 
+def retira_voo(codigo):
+    voos = carrega_voos()
+    voos = [v for v in voos if v["codigo"] != codigo]
+    try:
+        with open("/home/cibele/Documentos/TrabalhoFinalED2/arquivos/listaVoos.text", "w", encoding="utf-8") as f:
+            f.write(f"Voos = {voos}")
+    except Exception as e:
+        print("Erro ao remover voo:", e)
 
-# --- Rota Principal: Tela inicial (login do usuário) ---
-# Esta rota agora é a única definida para '/', exibindo o login.
+#Pagina inicial 
 @app.route('/')
+def home():
+        return render_template('menu.html')
+
+
+@app.route('/usuario')
 def tela_usuario():
     # Certifique-se de que o template 'usuario.html' existe na pasta 'templates'
     return render_template('usuario.html')
+
+# add no main um metodo
+@app.route('/remover_voo/<codigo>', methods=['POST'])
+def remover_voo(codigo):
+    retira_voo(codigo)
+    return redirect('/voos')
 
 
 # --- Processa o login e redireciona ---
@@ -41,18 +65,17 @@ def login():
     else:
         return "<h3>Usuário ou senha incorretos! <a href='/'>Tente novamente</a></h3>"
 
-
+# --- Listagem de voos ---
 @app.route('/voos')
 def listar_voos():
-    voos = carregar_voos()
-    return render_template('voos.html', voos=voos)
-
-
-if __name__ == "__main__":
-    voos = carregar_voos()
+    voos = carrega_voos()
     print("Lista de voos carregada do arquivo:\n")
     for v in voos:
         print(f"Código: {v['codigo']}, Origem: {v['origem']}, Destino: {v['destino']}, Preço: R$ {v['preco']:.2f}")
-
+    return render_template('voos.html', voos=voos)
+if __name__ == "__main__":
     app.run(debug=True)
 
+# colocar uma barra de navegação para "descer" os voos cadastrados
+# colocar os voos já na lista na tabela da primeira pagina
+# edições de voo (adicionar e excluir) apenas para administradores!

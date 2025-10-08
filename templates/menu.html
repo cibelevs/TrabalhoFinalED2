@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Controle de Voos</title>
+
+    <!-- Bootstrap -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    />
+
+    <!-- Font Awesome -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+        integrity="sha512-1zcj3pVHXJcZ1vP0o5HeL1aPaQmGKo6eD6qEK/GHBzjEoXyK7cspJ1ZzEq4+8xdvEpv5u0+ZXMgmD5kdkk8xeg=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"
+    />
+
+    <style>
+        :root {
+            --laranja: #ff7b00;
+            --laranja-escuro: #e56c00;
+            --branco: #ffffff;
+            --cinza-claro: #f7f7f7;
+            --cinza-texto: #5a5a5a;
+        }
+
+        body {
+            background-color: var(--branco);
+            color: var(--cinza-texto);
+            min-height: 100vh;
+            font-family: "Segoe UI", sans-serif;
+        }
+
+        /* Navbar */
+        .navbar {
+            background-color: var(--laranja);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            color: var(--branco) !important;
+            letter-spacing: 0.5px;
+        }
+
+        .nav-link {
+            color: var(--branco) !important;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .nav-link:hover {
+            color: var(--cinza-claro) !important;
+            transform: scale(1.05);
+        }
+
+        /* Conteúdo principal */
+        .container-main {
+            margin-top: 110px;
+        }
+
+        .card {
+            background-color: var(--cinza-claro);
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            color: var(--cinza-texto);
+        }
+
+        .card-header {
+            background-color: var(--laranja);
+            color: var(--branco);
+            font-weight: 600;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .voo-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .voo-codigo {
+            font-weight: bold;
+            color: var(--laranja-escuro);
+        }
+
+        .voo-preco {
+            font-weight: bold;
+            color: #2c7a2c;
+        }
+
+        .btn-danger.btn-sm {
+            background-color: #ff4c4c;
+            border: none;
+            transition: 0.3s;
+        }
+
+        .btn-danger.btn-sm:hover {
+            background-color: #cc3a3a;
+            transform: scale(1.05);
+        }
+
+        footer {
+            margin-top: 80px;
+            padding: 20px;
+            text-align: center;
+            color: var(--cinza-texto);
+            font-size: 0.9rem;
+            background-color: var(--cinza-claro);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                ✈ Sistema de Controle de Voos
+            </a>
+            <button
+                class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarNav"
+                aria-controls="navbarNav"
+                aria-expanded="false"
+                aria-label="Alternar navegação"
+            >
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/voos"><i class="fa-solid fa-plane-up me-1"></i> Voos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/usuario"><i class="fa-solid fa-user-gear me-1"></i> Administração</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Conteúdo -->
+    <div class="container container-main">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header fs-5">
+                        <i class="fas fa-list-ul me-2"></i> Voos Cadastrados
+                    </div>
+                    <div class="card-body">
+                        {% if voos %}
+                        <ul class="list-unstyled">
+                            <li class="voo-item">
+                                 <tbody>
+                                {% for v in voos %}
+                                <tr>
+                                    <td>{{ v.codigo }}</td>
+                                    <td>{{ v.origem }}</td>
+                                    <td>{{ v.destino }}</td>
+                                    <td>{{ "%.2f"|format(v.preco) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            </li>
+                        </ul>
+                        {% else %}
+                        <div class="text-center p-4">
+                            <i class="fas fa-info-circle fa-2x text-muted mb-2"></i>
+                            <p class="mb-0">Nenhum voo cadastrado no momento.</p>
+                            <small class="text-muted">
+                                Use o formulário de administração para adicionar o primeiro voo.
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rodapé -->
+    <footer>
+        <p>Trabalho Final - Estrutura de Dados II • Desenvolvido por <strong>Cibele Vale Sacramento</strong> e <strong>Alberman dos Santos</strong></p>
+    </footer>
+
+    <script
+        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+    ></script>
+</body>
+</html>
