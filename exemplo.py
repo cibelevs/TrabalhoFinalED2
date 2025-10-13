@@ -1,55 +1,71 @@
+import os, ast
 from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 
-# --- Carrega os voos a partir do arquivo listaVoos.text ---
+# --- Função para carregar voos do arquivo dentro da pasta 'arquivos' ---
 def carregar_voos():
     try:
-        with open("listaVoos.text", "r", encoding="utf-8") as f:
-            conteudo = f.read()
-            exec(conteudo, globals())  # Executa o conteúdo (cria a lista Voos)
-            return globals().get("Voos", [])
+        caminho = os.path.join("arquivos", "listaVoos.text")
+        with open(caminho, "r", encoding="utf-8") as f:
+            conteudo = f.read().strip()
+
+            if conteudo.startswith("Voos ="):
+                conteudo = conteudo.split("=", 1)[1].strip()
+
+            voos = ast.literal_eval(conteudo)
+            return voos if isinstance(voos, list) else []
     except Exception as e:
         print(f"Erro ao carregar voos: {e}")
         return []
 
-# --- Página inicial (login do usuário) ---
+# --- Função auxiliar para salvar os voos ---
+def salvar_voos(voos):
+    try:
+        caminho = os.path.join("arquivos", "listaVoos.text")
+        with open(caminho, "w", encoding="utf-8") as f:
+            f.write("Voos = " + str(voos))
+    except Exception as e:
+        print(f"Erro ao salvar voos: {e}")
+
+# --- Página inicial (menu principal) ---
 @app.route('/')
 def home():
-        return render_template('menu.html')
+    voos = carregar_voos()
+    return render_template('menu.html', voos=voos)
 
-
+# --- Página de login ---
 @app.route('/usuario')
 def tela_usuario():
-    # Certifique-se de que o template 'usuario.html' existe na pasta 'templates'
     return render_template('usuario.html')
 
-
-# --- Processa o login ---
-@app.route("/login", methods=["POST"])
+# --- Login simples para administrador ---
+@app.route('/login', methods=['POST'])
 def login():
-    nome = request.form.get("nome")
-    senha = request.form.get("senha")
+    nome = request.form.get('nome')
+    senha = request.form.get('senha')
 
-    # Login simples (pode mudar depois para BD)
-    if nome == "admin" and senha == "123":
-        return redirect(url_for("painel_admin"))
+    if nome == 'admin' and senha == '123':
+        return redirect(url_for('painel_admin'))
     else:
-        return "<h3 style='color:red; text-align:center;'>Usuário ou senha incorretos!</h3><a href='/'>Voltar</a>"
+        return """
+        <h3 style='color:red; text-align:center;'>Usuário ou senha incorretos!</h3>
+        <div style='text-align:center;'><a href='/' style='color:#ff7b00;'>Voltar</a></div>
+        """
 
-# --- Página do painel administrativo ---
-@app.route("/painel")
+# --- Painel do administrador ---
+@app.route('/painel')
 def painel_admin():
     voos = carregar_voos()
-    return render_template("pag.html", voos=voos)
+    return render_template('pag.html', voos=voos)
 
 # --- Adicionar novo voo ---
-@app.route("/adicionar_voo", methods=["POST"])
+@app.route('/adicionar_voo', methods=['POST'])
 def adicionar_voo():
-    codigo = request.form.get("codigo")
-    origem = request.form.get("origem")
-    destino = request.form.get("destino")
-    preco = float(request.form.get("preco"))
+    codigo = request.form.get('codigo')
+    origem = request.form.get('origem')
+    destino = request.form.get('destino')
+    preco = float(request.form.get('preco'))
 
     voos = carregar_voos()
     voos.append({
@@ -58,33 +74,18 @@ def adicionar_voo():
         "destino": destino,
         "preco": preco
     })
-
     salvar_voos(voos)
-    return redirect(url_for("painel_admin"))
+    return redirect(url_for('painel_admin'))
 
-# --- Remover voo pelo código ---
-@app.route("/remover_voo", methods=["POST"])
+# --- Remover voo ---
+@app.route('/remover_voo', methods=['POST'])
 def remover_voo():
-    codigo = request.form.get("codigo")
-
+    codigo = request.form.get('codigo')
     voos = carregar_voos()
     voos = [v for v in voos if v["codigo"] != codigo]
-
     salvar_voos(voos)
-    return redirect(url_for("painel_admin"))
-
-# --- Função auxiliar para salvar os voos ---
-def salvar_voos(voos):
-    try:
-        with open("listaVoos.text", "w", encoding="utf-8") as f:
-            f.write("Voos = " + str(voos))
-    except Exception as e:
-        print(f"Erro ao salvar voos: {e}")
+    return redirect(url_for('painel_admin'))
 
 # --- Executa o app ---
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
-
-# colocar uma barra de navegação para "descer" os voos cadastrados
-# colocar os voos já na lista na tabela da primeira pagina
-# edições de voo (adicionar e excluir) apenas para administradores!
