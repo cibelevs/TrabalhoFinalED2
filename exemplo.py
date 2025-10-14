@@ -89,3 +89,11 @@ def remover_voo():
 # --- Executa o app ---
 if __name__ == '__main__':
     app.run(debug=True)
+
+# O que falta adicionar/modificar: 
+# Página para usuário (criar conta com login e senha)
+# ---> colocar uma mensagem na página inicial (tem interesse de criar uma conta?)
+# Aumentar a tabela de voos para ficarem mais visíveis.
+# Fazer para que o usuário busque um dado de um voo (pela localidade)
+# Não permitir os voos com os mesmos códigos! Na hora de deletar está excluindo os dois
+# Adicionar algum tipo de diferencial nessa parte (horarios dos voos, cadeiras disponiveis?)
