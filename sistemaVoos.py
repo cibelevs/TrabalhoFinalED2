@@ -1,4 +1,5 @@
-import os, ast
+import os
+import ast
 from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
@@ -9,10 +10,8 @@ def carregar_voos():
         caminho = os.path.join("arquivos", "listaVoos.text")
         with open(caminho, "r", encoding="utf-8") as f:
             conteudo = f.read().strip()
-
             if conteudo.startswith("Voos ="):
                 conteudo = conteudo.split("=", 1)[1].strip()
-
             voos = ast.literal_eval(conteudo)
             return voos if isinstance(voos, list) else []
     except Exception as e:
@@ -35,12 +34,12 @@ def home():
     return render_template('menu.html', voos=voos)
 
 # --- Página de login ---
-@app.route('/usuario')
+@app.route('/administrador')
 def tela_usuario():
-    return render_template('usuario.html')
+    return render_template('acesso_adm.html')
 
 # --- Login simples para administrador ---
-@app.route('/login', methods=['POST'])
+@app.route('/loginAdm', methods=['POST'])
 def login():
     nome = request.form.get('nome')
     senha = request.form.get('senha')
@@ -57,25 +56,30 @@ def login():
 @app.route('/painel')
 def painel_admin():
     voos = carregar_voos()
-    return render_template('pag.html', voos=voos)
+    return render_template('pag_adm.html', voos=voos)
 
-# --- Adicionar novo voo ---
+# --- Adicionar voo ---
 @app.route('/adicionar_voo', methods=['POST'])
 def adicionar_voo():
     codigo = request.form.get('codigo')
     origem = request.form.get('origem')
     destino = request.form.get('destino')
-    preco = float(request.form.get('preco'))
+    preco_str = request.form.get('preco')
+
+    try:
+        preco = float(preco_str)
+    except (TypeError, ValueError):
+        return render_template('pag_adm.html', error="Preço inválido.")
 
     voos = carregar_voos()
-    voos.append({
-        "codigo": codigo,
-        "origem": origem,
-        "destino": destino,
-        "preco": preco
-    })
+
+    # Verifica se código já existe
+    if any(voo["codigo"] == codigo for voo in voos):
+        return render_template('pag_adm.html', error=f"O código '{codigo}' já está em uso.", voos=voos)
+
+    voos.append({"codigo": codigo, "origem": origem, "destino": destino, "preco": preco})
     salvar_voos(voos)
-    return redirect(url_for('painel_admin'))
+    return render_template('pag_adm.html', success="Voo adicionado com sucesso!", voos=voos)
 
 # --- Remover voo ---
 @app.route('/remover_voo', methods=['POST'])
@@ -85,6 +89,31 @@ def remover_voo():
     voos = [v for v in voos if v["codigo"] != codigo]
     salvar_voos(voos)
     return redirect(url_for('painel_admin'))
+
+@app.route('/salvar_edicao', methods=['POST'])
+def salvar_edicao():
+    codigo = request.form.get('codigo')
+    origem = request.form.get('origem')
+    destino = request.form.get('destino')
+    preco_str = request.form.get('preco')
+
+    try:
+        preco = float(preco_str)
+    except (TypeError, ValueError):
+        voos = carregar_voos()
+        return render_template('pag_adm.html', error="Preço inválido.", voos=voos)
+
+    voos = carregar_voos()
+    for voo in voos:
+        if voo["codigo"] == codigo:
+            voo["origem"] = origem
+            voo["destino"] = destino
+            voo["preco"] = preco
+            break
+
+    salvar_voos(voos)
+    return redirect(url_for('painel_admin'))
+
 
 # --- Executa o app ---
 if __name__ == '__main__':
