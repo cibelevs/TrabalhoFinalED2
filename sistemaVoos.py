@@ -1,5 +1,5 @@
 import os
-import asts
+import ast
 from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
@@ -39,7 +39,7 @@ def tela_usuario():
     return render_template('acesso_adm.html')
 
 # --- Login simples para administrador ---
-@app.route('/loginAdm', methods=['POST'])
+@app.route('/login', methods=['POST'])
 def login():
     nome = request.form.get('nome')
     senha = request.form.get('senha')
@@ -53,10 +53,29 @@ def login():
         """
 
 # --- Painel do administrador ---
-@app.route('/painel')
+@app.route('/painel_admin')
 def painel_admin():
     voos = carregar_voos()
     return render_template('pag_adm.html', voos=voos)
+
+
+# --- Página de consulta de voos pelo adm ---
+@app.route('/voos')
+def voos_usuario():
+    # Pega parâmetros de busca
+    origem_busca = request.args.get('origem', '').lower()
+    destino_busca = request.args.get('destino', '').lower()
+
+    voos = carregar_voos()
+
+    # Filtra voos se houver pesquisa
+    if origem_busca or destino_busca:
+        voos = [
+            v for v in voos
+            if origem_busca in v['origem'].lower() and destino_busca in v['destino'].lower()
+        ]
+
+    return render_template('voos.html', voos=voos, origem=origem_busca, destino=destino_busca)
 
 # --- Adicionar voo ---
 @app.route('/adicionar_voo', methods=['POST'])
@@ -125,7 +144,5 @@ if __name__ == '__main__':
 # ---> fazer em dicionários 
 # Aumentar a tabela de voos para ficarem mais visíveis.
 # Fazer para que o usuário busque um dado de um voo (pela localidade)
-# Não permitir os voos com os mesmos códigos! Na hora de deletar está excluindo os dois
-# Adicionar algum tipo de diferencial nessa parte (horarios dos voos, cadeiras disponiveis?)
 # Tentar colocar alguma descrição dentro da página do administrador em que:
 # ----->"voos internacionais começam com IN , voos no brasil começam com ED"
