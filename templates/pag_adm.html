@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8" />
@@ -63,11 +63,6 @@
             background-color: var(--laranja-escuro);
         }
 
-        .table-container {
-            max-height: 250px;
-            overflow-y: auto;
-        }
-
         footer {
             margin-top: 60px;
             padding: 20px;
@@ -85,29 +80,34 @@
                 <ul class="navbar-nav">
                     <li class="nav-item"><a class="nav-link" href="/"><i class="fa-solid fa-right-from-bracket me-1"></i> Sair</a></li>
                     <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('voos_usuario') }}">
-                        <i class="fa-solid fa-plane-departure me-1"></i> Consultar Voos
-                    </a>
+                        <a class="nav-link" href="{{ url_for('voos_usuario') }}">
+                            <i class="fa-solid fa-plane-departure me-1"></i> Consultar Voos
+                        </a>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
 
-   
-
-
     <div class="container container-main">
-        <h2 class="text-center mb-5" style="color: var(--laranja-escuro); font-weight: 700;">Painel do Administrador</h2>
+        <h2 class="text-center mb-4" style="color: var(--laranja-escuro); font-weight: 700;">Painel do Administrador</h2>
 
-        <!-- Mensagens -->
+        <!-- Mensagem elegante sobre códigos -->
+        <div class="shadow-sm text-center mb-5 p-3 rounded"
+        style="background-color: #fff3e0; border-left: 6px solid var(--laranja); font-size: 1.05rem;">
+        <i class="fa-solid fa-circle-info me-2" style="color: var(--laranja-escuro);"></i>
+        <strong>OBS:</strong> Voos <strong>Nacionais</strong> têm código iniciado com <strong>ED</strong>, 
+        e voos <strong>Internacionais</strong> têm código iniciado com <strong>IN</strong>.
+        </div>
+
+        <!-- Mensagens de sucesso/erro -->
         {% with messages = get_flashed_messages(with_categories=true) %}
           {% if messages %}
             <div class="mb-4">
               {% for category, msg in messages %}
                 <div class="alert alert-{{ 'danger' if category == 'erro' else 'success' }} alert-dismissible fade show" role="alert">
                     {{ msg }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
                 </div>
               {% endfor %}
             </div>
@@ -115,12 +115,12 @@
         {% endwith %}
         {% if error %}
           <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">{{ error }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
           </div>
         {% endif %}
         {% if success %}
           <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">{{ success }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
           </div>
         {% endif %}
 
@@ -138,46 +138,46 @@
             </div>
         </div>
 
-       <!-- Remover voo -->
+        <!-- Últimos voos cadastrados -->
         <div class="card mb-4">
-            <div class="card-header"><i class="fa-solid fa-trash-can me-2"></i> Remover Voo</div>
-            <div class="card-body">
-                <form id="formRemover" class="row g-3">
-                    <div class="col-md-4">
-                        <input type="text" class="form-control" name="origem" placeholder="Origem" required>
-                    </div>
-                    <div class="col-md-4">
-                        <input type="text" class="form-control" name="destino" placeholder="Destino" required>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <button type="button" class="btn btn-danger px-4" id="btnRemover">
-                            <i class="fa-solid fa-minus-circle me-1"></i> Remover
-                        </button>
-                    </div>
-                </form>
+        <div class="card-header"><i class="fa-solid fa-plane me-2"></i> Últimos Voos Cadastrados</div>
+        <div class="card-body">
+            {% if voos %}
+            <div class="table-responsive">
+            <table class="table table-striped table-hover text-center align-middle">
+                <thead class="table-warning">
+                <tr>
+                    <th>Código</th>
+                    <th>Origem</th>
+                    <th>Destino</th>
+                    <th>Preço (R$)</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for v in voos[-5:] %}
+                <tr>
+                    <td>{{ v.codigo }}</td>
+                    <td>{{ v.origem }}</td>
+                    <td>{{ v.destino }}</td>
+                    <td>{{ "%.2f"|format(v.preco) }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
             </div>
-        </div>
-
-        <!-- Modal de confirmação -->
-        <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-            <div class="modal-header bg-danger text-white">
-                <h5 class="modal-title"><i class="fa-solid fa-triangle-exclamation me-2"></i> Confirmação</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-            </div>
-            <div class="modal-body" id="modalMensagem">
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button type="button" class="btn btn-danger" id="confirmarRemocao">Sim, remover</button>
-            </div>
-            </div>
+            {% else %}
+            <p class="text-muted text-center mb-0">Nenhum voo cadastrado ainda.</p>
+            {% endif %}
         </div>
         </div>
 
-        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-        <script>
+        <footer>
+            <p>Trabalho Final - Estrutura de Dados II • Desenvolvido por <strong>Cibele Vale Sacramento</strong> e <strong>Alberman dos Santos</strong></p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
         const btnRemover = document.getElementById('btnRemover');
         const modalMensagem = document.getElementById('modalMensagem');
         const confirmarRemocao = document.getElementById('confirmarRemocao');
@@ -189,11 +189,11 @@
             const destino = formRemover.elements['destino'].value;
 
             modalMensagem.innerHTML = `
-                <p>Tem certeza que deseja remover o voo:</p>
-                <ul>
-                     <li><strong>Origem:</strong> ${origem}</li>
-                     <li><strong>Destino:</strong> ${destino}</li>
-                </ul>
+                <p class="mb-2">Tem certeza que deseja remover o voo abaixo?</p>
+                <div class="bg-light p-3 rounded border">
+                    <p class="mb-1"><strong>Origem:</strong> ${origem}</p>
+                    <p class="mb-0"><strong>Destino:</strong> ${destino}</p>
+                </div>
             `;
             confirmModal.show();
         });
@@ -201,103 +201,6 @@
         confirmarRemocao.addEventListener('click', () => {
             formRemover.submit();
         });
-        </script>
-
-
-        <!-- Lista de voos -->
-        <div class="card">
-            <div class="card-header"><i class="fa-solid fa-list me-2"></i> Voos Cadastrados</div>
-            <div class="card-body table-container">
-                {% if voos %}
-                <table class="table table-striped text-center align-middle">
-                    <thead class="table-warning">
-                        <tr>
-                            <th>Código</th>
-                            <th>Origem</th>
-                            <th>Destino</th>
-                            <th>Preço (R$)</th>
-                            <th>Ações</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for v in voos %}
-                        <tr>
-                            <td>{{ v.codigo }}</td>
-                            <td>{{ v.origem }}</td>
-                            <td>{{ v.destino }}</td>
-                            <td>{{ "%.2f"|format(v.preco) }}</td>
-                            <td>
-                                <button 
-                                    class="btn btn-sm btn-laranja"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#modalEditar"
-                                    data-codigo="{{ v.codigo }}"
-                                    data-origem="{{ v.origem }}"
-                                    data-destino="{{ v.destino }}"
-                                    data-preco="{{ v.preco }}">
-                                    <i class="fa-solid fa-pen-to-square"></i> Editar
-                                </button>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p class="text-center text-muted">Nenhum voo cadastrado.</p>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Edição -->
-    <div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-          <form action="/salvar_edicao" method="post">
-            <div class="modal-header bg-warning text-dark">
-              <h5 class="modal-title"><i class="fa-solid fa-pen-to-square me-2"></i>Editar Voo</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-              <input type="hidden" name="codigo" id="editCodigo">
-              <div class="mb-3">
-                <label class="form-label">Origem:</label>
-                <input type="text" class="form-control" name="origem" id="editOrigem" required>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Destino:</label>
-                <input type="text" class="form-control" name="destino" id="editDestino" required>
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Preço (R$):</label>
-                <input type="number" step="0.01" class="form-control" name="preco" id="editPreco" required>
-              </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-              <button type="submit" class="btn btn-laranja">Salvar Alterações</button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-
-    <footer>
-        <p>Trabalho Final - Estrutura de Dados II • Desenvolvido por <strong>Cibele Vale Sacramento</strong> e <strong>Alberman dos Santos</strong></p>
-    </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script>
-      // Preenche os campos do modal com os dados do voo clicado
-      const modalEditar = document.getElementById('modalEditar');
-      modalEditar.addEventListener('show.bs.modal', event => {
-        const button = event.relatedTarget;
-        document.getElementById('editCodigo').value = button.getAttribute('data-codigo');
-        document.getElementById('editOrigem').value = button.getAttribute('data-origem');
-        document.getElementById('editDestino').value = button.getAttribute('data-destino');
-        document.getElementById('editPreco').value = button.getAttribute('data-preco');
-      });
     </script>
 </body>
 </html>

@@ -1,8 +1,11 @@
 import os
 import ast
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages
+
 
 app = Flask(__name__)
+app.secret_key = "sua_chave_secreta_aqui"  # pode ser qualquer string
+
 
 # --- Função para carregar voos do arquivo dentro da pasta 'arquivos' ---
 def carregar_voos():
@@ -172,15 +175,30 @@ def adicionar_voo():
     voos.append({"codigo": codigo, "origem": origem, "destino": destino, "preco": preco})
     salvar_voos(voos)
     return render_template('pag_adm.html', success="Voo adicionado com sucesso!", voos=voos)
-
-# --- Remover voo ---
+# --- Remover Voo ---
 @app.route('/remover_voo', methods=['POST'])
 def remover_voo():
-    codigo = request.form.get('codigo')
+    origem = request.form.get('origem', '').strip().lower()
+    destino = request.form.get('destino', '').strip().lower()
+
     voos = carregar_voos()
-    voos = [v for v in voos if v["codigo"] != codigo]
+    voos_antes = len(voos)
+
+    # Remove voo por origem e destino (ignorando maiúsculas/minúsculas)
+    voos = [v for v in voos if not (
+        v["origem"].strip().lower() == origem and 
+        v["destino"].strip().lower() == destino
+    )]
+
     salvar_voos(voos)
+    
+    if len(voos) < voos_antes:
+        flash("Voo removido com sucesso!", "sucesso")
+    else:
+        flash("Nenhum voo encontrado com essa origem e destino.", "erro")
+
     return redirect(url_for('painel_admin'))
+
 
 @app.route('/salvar_edicao', methods=['POST'])
 def salvar_edicao():
