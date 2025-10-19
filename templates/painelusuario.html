@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sistema de Controle de Voos</title>
+    <title>Painel do Usuário</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
@@ -33,10 +33,6 @@
             font-weight: 600;
         }
 
-        .nav-link:hover {
-            color: var(--cinza-claro) !important;
-        }
-
         .container-main {
             margin-top: 110px;
             max-width: 900px;
@@ -56,70 +52,72 @@
             border-radius: 12px 12px 0 0;
         }
 
-        .table-container {
-            max-height: 300px;
-            overflow-y: auto;
-            scrollbar-width: thin;
-            scrollbar-color: var(--laranja) #f1f1f1;
-        }
-
-        .table-container::-webkit-scrollbar {
-            width: 8px;
-        }
-        .table-container::-webkit-scrollbar-thumb {
-            background-color: var(--laranja);
-            border-radius: 6px;
-        }
-
         footer {
-            margin-top: 80px;
+            margin-top: 60px;
             padding: 20px;
-            text-align: center;
-            color: var(--cinza-texto);
-            font-size: 0.9rem;
             background-color: var(--cinza-claro);
+            text-align: center;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 
 <body>
+    <!-- Navbar -->
     <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container">
             <a class="navbar-brand" href="/">✈ Sistema de Controle de Voos</a>
             <div class="collapse navbar-collapse justify-content-end">
-               <ul class="navbar-nav">
-    <li class="nav-item">
-        <a class="nav-link" href="/administrador">
-            <i class="fa-solid fa-user-gear me-1"></i> Administração
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="/cadastro">
-            <i class="fa-solid fa-user-plus me-1"></i> Cadastre-se
-        </a>
-    </li>
-    <li class="nav-item">
-        <a class="nav-link" href="/login_usuario">
-            <i class="fa-solid fa-right-to-bracket me-1"></i> Login Usuário
-        </a>
-    </li>
-</ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">
+                            <i class="fa-solid fa-right-from-bracket me-1"></i> Sair
+                            
+                        </a>
+                        
+                
+                    </li>
+                    
+                    
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('voos_usuario') }}">
+                            <i class="fa-solid fa-plane-departure me-1"></i> Meus Voos
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
 
+    <!-- Conteúdo principal -->
     <div class="container container-main">
-        <div class="text-center mb-5 p-4 rounded shadow-sm" style="background-color: #fff7f0; border-left: 6px solid var(--laranja);">
-            <h3 style="color: var(--laranja-escuro); font-weight: 700;">Bem-vindo(a) ao Sistema de Controle de Voos ✈</h3>
-            <p>Visualize abaixo os voos disponíveis no momento.</p>
-        </div>
+        <h2 class="text-center mb-5" style="color: var(--laranja-escuro); font-weight: 700;">
+            Painel do Usuário
+        </h2>
 
+        <!-- Mensagens -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="mb-4">
+              {% for category, msg in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'erro' else 'success' }} alert-dismissible fade show" role="alert">
+                    {{ msg }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+
+        <!-- Lista de voos disponíveis -->
         <div class="card">
-            <div class="card-header"><i class="fas fa-list-ul me-2"></i> Tabela de voos</div>
+            <div class="card-header">
+                <i class="fa-solid fa-list me-2"></i> Voos Disponíveis
+            </div>
             <div class="card-body table-container">
                 {% if voos %}
-                <table class="table align-middle text-center">
-                    <thead class="table-light">
+                <table class="table table-striped text-center align-middle">
+                    <thead class="table-warning">
                         <tr>
                             <th>Código</th>
                             <th>Origem</th>
@@ -139,7 +137,7 @@
                     </tbody>
                 </table>
                 {% else %}
-                <p class="text-center text-muted mt-3">Nenhum voo cadastrado no momento.</p>
+                <p class="text-center text-muted">Nenhum voo disponível no momento.</p>
                 {% endif %}
             </div>
         </div>
@@ -148,5 +146,7 @@
     <footer>
         <p>Trabalho Final - Estrutura de Dados II • Desenvolvido por <strong>Cibele Vale Sacramento</strong> e <strong>Alberman dos Santos</strong></p>
     </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

@@ -1,0 +1,1 @@
+Usuarios = [{'nome': 'joao', 'senha': '123'}, {'nome': 'maria', 'senha': '456'}, {'nome': 'alber', 'senha': '1234'}]

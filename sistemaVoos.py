@@ -33,6 +33,69 @@ def home():
     voos = carregar_voos()
     return render_template('menu.html', voos=voos)
 
+def carregar_usuarios():
+    try:
+        caminho = os.path.join("arquivos", "usuarios.text")
+        with open(caminho, "r", encoding="utf-8") as f:
+            conteudo = f.read().strip()
+            if conteudo.startswith("Usuarios ="):
+                conteudo = conteudo.split("=", 1)[1].strip()
+            usuarios = ast.literal_eval(conteudo)
+            return usuarios if isinstance(usuarios, list) else []
+    except Exception as e:
+        print(f"Erro ao carregar usuários: {e}")
+        return []
+
+def salvar_usuarios(usuarios):
+    try:
+        caminho = os.path.join("arquivos", "usuarios.text")
+        with open(caminho, "w", encoding="utf-8") as f:
+            f.write("Usuarios = " + str(usuarios))
+    except Exception as e:
+        print(f"Erro ao salvar usuários: {e}")
+
+
+@app.route('/cadastro')
+def cadastro():
+    return render_template('cadastro.html')
+
+@app.route('/registrar', methods=['POST'])
+def registrar():
+    nome = request.form.get('nome')
+    senha = request.form.get('senha')
+
+    usuarios = carregar_usuarios()
+
+    if any(u['nome'] == nome for u in usuarios):
+        return render_template('cadastro.html', erro="Nome de usuário já existe!")
+
+    usuarios.append({"nome": nome, "senha": senha})
+    salvar_usuarios(usuarios)
+    return render_template('acesso_adm.html', sucesso="Conta criada com sucesso! Faça login.")
+
+@app.route('/login_usuario')
+def login_usuario():
+    return render_template('login_usuario.html')
+
+@app.route('/login_usuario', methods=['POST'])
+def login_usuario_post():
+    nome = request.form.get('nome')
+    senha = request.form.get('senha')
+
+    usuarios = carregar_usuarios()  # função que lê usuarios.text
+
+    # procura usuário com nome e senha corretos
+    usuario_valido = any(u.get('nome') == nome and u.get('senha') == senha for u in usuarios)
+    if usuario_valido:
+        return redirect(url_for('painel_usuario'))
+
+    # login inválido
+    return """
+    <h3 style='color:red; text-align:center;'>Usuário ou senha incorretos!</h3>
+    <div style='text-align:center;'><a href='/login_usuario' style='color:#ff7b00;'>Voltar</a></div>
+    """
+
+
 # --- Página de login ---
 @app.route('/administrador')
 def tela_usuario():
@@ -46,6 +109,11 @@ def login():
 
     if nome == 'admin' and senha == '123':
         return redirect(url_for('painel_admin'))
+    
+
+    usuarios = carregar_usuarios()
+    if any(u['nome'] == nome and u['senha'] == senha for u in usuarios):
+        return redirect(url_for('painel_usuario'))
     else:
         return """
         <h3 style='color:red; text-align:center;'>Usuário ou senha incorretos!</h3>
@@ -57,6 +125,11 @@ def login():
 def painel_admin():
     voos = carregar_voos()
     return render_template('pag_adm.html', voos=voos)
+
+@app.route('/painel_usuario')
+def painel_usuario():
+    voos = carregar_voos()
+    return render_template('painelusuario.html', voos=voos)
 
 
 # --- Página de consulta de voos pelo adm ---

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastro de Usuário</title>
+</head>
+<body style="text-align:center;">
+    <h2>Crie sua Conta</h2>
+
+    {% if erro %}
+        <p style="color:red;">{{ erro }}</p>
+    {% endif %}
+    {% if sucesso %}
+        <p style="color:green;">{{ sucesso }}</p>
+    {% endif %}
+
+    <form method="POST" action="/registrar">
+        <label>Nome de usuário:</label><br>
+        <input type="text" name="nome" required><br><br>
+
+        <label>Senha:</label><br>
+        <input type="password" name="senha" required><br><br>
+
+        <button type="submit">Cadastrar</button>
+    </form>
+
+    <br>
+    <a href="/">Voltar ao Menu</a>
+</body>
+</html>
