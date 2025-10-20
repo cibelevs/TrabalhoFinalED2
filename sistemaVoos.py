@@ -135,6 +135,24 @@ def painel_usuario():
     return render_template('painelusuario.html', voos=voos)
 
 
+
+# --- Página de consulta de voos pelo usuario ---
+@app.route('/consultar_voos_usuario')
+def consultar_voos_usuario():
+    origem_busca = request.args.get('origem', '').lower()
+    destino_busca = request.args.get('destino', '').lower()
+
+    voos = carregar_voos()
+
+    if origem_busca or destino_busca:
+        voos = [
+            v for v in voos
+            if origem_busca in v['origem'].lower() and destino_busca in v['destino'].lower()
+        ]
+
+    # Essa página NÃO mostrará botões de edição e remoção
+    return render_template('voos_usuario.html', voos=voos, origem=origem_busca, destino=destino_busca)
+
 # --- Página de consulta de voos pelo adm ---
 @app.route('/voos')
 def voos_usuario():
