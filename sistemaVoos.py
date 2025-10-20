@@ -171,6 +171,12 @@ def voos_usuario():
 
     return render_template('voos.html', voos=voos, origem=origem_busca, destino=destino_busca)
 
+
+@app.route('/voos')
+def voos():
+    return render_template('voos.html', voos=voos)
+
+
 # --- Adicionar voo ---
 @app.route('/adicionar_voo', methods=['POST'])
 def adicionar_voo():
@@ -215,7 +221,7 @@ def remover_voo():
     else:
         flash("Nenhum voo encontrado com essa origem e destino.", "erro")
 
-    return redirect(url_for('painel_admin'))
+    return redirect(url_for('voos'))
 
 
 @app.route('/salvar_edicao', methods=['POST'])
