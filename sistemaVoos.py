@@ -74,7 +74,7 @@ def registrar():
 
     usuarios.append({"nome": nome, "senha": senha})
     salvar_usuarios(usuarios)
-    return render_template('acesso_adm.html', sucesso="Conta criada com sucesso! Faça login.")
+    return render_template('login_usuario.html', sucesso="Conta criada com sucesso! Faça login.")
 
 @app.route('/login_usuario')
 def login_usuario():
@@ -253,11 +253,4 @@ def salvar_edicao():
 if __name__ == '__main__':
     app.run(debug=True)
 
-# O que falta adicionar/modificar: 
-# Página para usuário (criar conta com login e senha)
-# ---> colocar uma mens agem na página inicial (tem interesse de criar uma conta?)
-# ---> fazer em dicionários 
-# Aumentar a tabela de voos para ficarem mais visíveis.
-# Fazer para que o usuário busque um dado de um voo (pela localidade)
-# Tentar colocar alguma descrição dentro da página do administrador em que:
-# ----->"voos internacionais começam com IN , voos no brasil começam com ED"
+
