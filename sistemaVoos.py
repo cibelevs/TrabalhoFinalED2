@@ -248,6 +248,25 @@ def salvar_edicao():
     salvar_voos(voos)
     return redirect(url_for('painel_admin'))
 
+@app.route("/", methods=["GET"])
+def index():
+    origem = request.args.get("origem", "").strip()
+    destino = request.args.get("destino", "").strip()
+    voos = []
+
+    if origem and destino:
+        try:
+            with open("listaVoos.txt", "r", encoding="utf-8") as arquivo:
+                for linha in arquivo:
+                    dados = linha.strip().split(";")
+                    if len(dados) >= 3:
+                        o, d, valor = dados[0].strip(), dados[1].strip(), dados[2].strip()
+                        if origem.lower() in o.lower() and destino.lower() in d.lower():
+                            voos.append({"origem": o, "destino": d, "valor": valor})
+        except FileNotFoundError:
+            voos = []
+
+    return render_template("menu.html", origem=origem, destino=destino, voos=voos)
 
 # --- Executa o app ---
 if __name__ == '__main__':
