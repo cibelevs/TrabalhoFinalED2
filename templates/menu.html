@@ -41,7 +41,7 @@
     }
 
     .container-main {
-      margin-top: 120px;
+      margin-top: 25px;
       width: 100%;
       max-width: 1200px;
       flex: 1;
@@ -51,10 +51,11 @@
     .busca-card {
       background-color: var(--branco);
       border-radius: 12px;
-      padding: 35px 50px;
+      padding: 35px 40px;
       box-shadow: 0 6px 18px rgba(0,0,0,0.08);
       border-left: 6px solid var(--laranja);
       width: 100%;
+      margin-bottom: 35px;
     }
 
     .busca-card h4 {
@@ -112,7 +113,8 @@
       font-style: italic;
     }
 
-    /* === Banner final (tipo GOL) === */
+    
+    /* === Banner final === */
     .banner-final {
       background-color: var(--laranja);
       color: var(--branco);
@@ -138,6 +140,18 @@
       border-radius: 12px;
     }
 
+
+    /* === Mensagem de boas-vindas === */
+    .welcome-section {
+      background-color: #fff7f0;
+      width: 100vw;
+      margin-top: 35px;
+      padding: 50px 20px;
+      color: var(--laranja-escuro);
+      font-weight: 600;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    }
+
     footer {
       margin-top: auto;
       padding: 20px;
@@ -148,8 +162,8 @@
     }
   </style>
 </head>
-
 <body>
+  <!-- Navbar -->
   <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
       <a class="navbar-brand" href="/">✈ Sistema de Controle de Voos</a>
@@ -169,14 +183,15 @@
     </div>
   </nav>
 
-  <div class="container container-main">
-    <div class="text-center mb-5 p-4 rounded shadow-sm" style="background-color: #fff7f0; border-left: 6px solid var(--laranja);">
-      <h3 style="color: var(--laranja-escuro); font-weight: 700;">Bem-vindo(a) ao Sistema de Controle de Voos ✈</h3>
-      <p>Pesquise os voos disponíveis abaixo — não é necessário criar uma conta para buscar.</p>
-    </div>
+  <!-- Boas-vindas -->
+  <div class="welcome-section text-center py-5">
+    <h3>Bem-vindo(a) ao Sistema de Controle de Voos ✈</h3>
+    <p>Pesquise os voos disponíveis abaixo — não é necessário criar uma conta para buscar.</p>
+  </div>
 
+  <div class="container-main mx-auto">
     <!-- Formulário de busca -->
-    <div class="busca-card mb-5 mx-auto">
+    <div class="busca-card">
       <h4><i class="fa-solid fa-magnifying-glass me-2"></i>Buscar voos</h4>
       <form method="get" action="/" class="row g-3 align-items-end justify-content-center">
         <div class="col-md-5">
@@ -203,15 +218,15 @@
       </form>
     </div>
 
-    <!-- Resultados só aparecem se houver pesquisa -->
-    {% if origem and destino %}
+    <!-- Resultados -->
+    {% if origem or destino %}
       {% if voos %}
         <div class="card p-4 mb-5">
           {% for voo in voos %}
             <div class="voo-card d-flex justify-content-between align-items-center">
               <div>
                 <strong>{{ voo.origem }}</strong> → <strong>{{ voo.destino }}</strong><br>
-                <span class="voo-valor">R$ {{ voo.valor }}</span>
+                <span class="voo-valor">R$ {{ voo.preco }}</span>
               </div>
               <div class="text-end">
                 <p class="mb-1"><small>Deseja criar uma conta para continuar?</small></p>
@@ -228,13 +243,13 @@
     {% endif %}
   </div>
 
-  <!-- Banner final tipo GOL -->
+  <!-- Banner final -->
   <div class="banner-final">
     <div class="banner-final-text">
-      <h2 class="fw-bold">Viaje com praticidade e segurança ✈</h2>
-      <p>Controle seus voos de forma rápida e simplificada em nosso sistema.</p>
+      <h2 class="fw-bold">Sua jornada começa aqui: voe com total praticidade e segurança ✈</h2>
+      <p>Descubra a facilidade de gerenciar suas viagens em um só lugar. Nosso sistema foi desenhado para oferecer a você uma experiência de controle de voos intuitiva, rápida e totalmente simplificada.</p>
     </div>
-    <img src="https://media.istockphoto.com/id/1302588096/pt/foto/hand-of-traveler-holds-bag-on-background-of-departure-board-in-airport.jpg?s=612x612&w=0&k=20&c=HE_8w-KMoYbVx0Wq_RPpEdDunE0W8TjUZfwODTXF2p8=" alt="Mala de viagem decorativa">
+    <img src="{{ url_for('static', filename='img/imagem_decor.jpg') }}" alt="Mala de viagem decorativa">
   </div>
 
   <footer>
@@ -242,5 +257,3 @@
   </footer>
 </body>
 </html>
-
-

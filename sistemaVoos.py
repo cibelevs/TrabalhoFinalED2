@@ -30,11 +30,6 @@ def salvar_voos(voos):
     except Exception as e:
         print(f"Erro ao salvar voos: {e}")
 
-# --- Página inicial (menu principal) ---
-@app.route('/')
-def home():
-    voos = carregar_voos()
-    return render_template('menu.html', voos=voos)
 
 def carregar_usuarios():
     try:
@@ -248,23 +243,19 @@ def salvar_edicao():
     salvar_voos(voos)
     return redirect(url_for('painel_admin'))
 
+
 @app.route("/", methods=["GET"])
 def index():
     origem = request.args.get("origem", "").strip()
     destino = request.args.get("destino", "").strip()
     voos = []
 
-    if origem and destino:
-        try:
-            with open("listaVoos.txt", "r", encoding="utf-8") as arquivo:
-                for linha in arquivo:
-                    dados = linha.strip().split(";")
-                    if len(dados) >= 3:
-                        o, d, valor = dados[0].strip(), dados[1].strip(), dados[2].strip()
-                        if origem.lower() in o.lower() and destino.lower() in d.lower():
-                            voos.append({"origem": o, "destino": d, "valor": valor})
-        except FileNotFoundError:
-            voos = []
+    if origem or destino:
+        todos_voos = carregar_voos()
+        voos = [
+            v for v in todos_voos
+            if origem.lower() in v["origem"].lower() and destino.lower() in v["destino"].lower()
+        ]
 
     return render_template("menu.html", origem=origem, destino=destino, voos=voos)
 
