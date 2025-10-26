@@ -1,6 +1,6 @@
 import os
 import ast
-from flask import Flask, render_template, request, redirect, url_for, flash, get_flashed_messages
+from flask import Flask, render_template, request, redirect, session, url_for, flash, get_flashed_messages
 
 
 app = Flask(__name__)
@@ -124,29 +124,65 @@ def painel_admin():
     voos = carregar_voos()
     return render_template('pag_adm.html', voos=voos)
 
-@app.route('/painel_usuario')
+@app.route("/painel_usuario")
 def painel_usuario():
-    voos = carregar_voos()
-    return render_template('painelusuario.html', voos=voos)
+    meus_voos = carregar_meus_voos()
+    return render_template("painelusuario.html", meus_voos=meus_voos)
 
 
 
 # --- Página de consulta de voos pelo usuario ---
-@app.route('/consultar_voos_usuario')
-def consultar_voos_usuario():
-    origem_busca = request.args.get('origem', '').lower()
-    destino_busca = request.args.get('destino', '').lower()
+def carregar_meus_voos():
+    if "meus_voos" not in session:
+        session["meus_voos"] = []
+    return session["meus_voos"]
 
-    voos = carregar_voos()
+def adicionar_voo_usuario(codigo_voo):
+    todos = carregar_voos()
+    voo = next((v for v in todos if v["codigo"] == codigo_voo), None)
 
-    if origem_busca or destino_busca:
-        voos = [
-            v for v in voos
-            if origem_busca in v['origem'].lower() and destino_busca in v['destino'].lower()
-        ]
+    if not voo:
+        return False
 
-    # Essa página NÃO mostrará botões de edição e remoção
-    return render_template('voos_usuario.html', voos=voos, origem=origem_busca, destino=destino_busca)
+    meus_voos = carregar_meus_voos()
+    if voo not in meus_voos:
+        meus_voos.append(voo)
+        session["meus_voos"] = meus_voos
+        session.modified = True
+    return True
+
+
+def remover_voo_usuario(codigo_voo):
+    meus_voos = carregar_meus_voos()
+    meus_voos = [v for v in meus_voos if v["codigo"] != codigo_voo]
+    session["meus_voos"] = meus_voos
+    session.modified = True
+
+
+@app.route("/buscar_voos_usuario")
+def buscar_voos_usuario():
+    origem = request.args.get("origem", "").strip().lower()
+    destino = request.args.get("destino", "").strip().lower()
+    todos = carregar_voos()
+    voos = [
+        v for v in todos
+        if origem in v["origem"].lower() and destino in v["destino"].lower()
+    ]
+    return render_template("painelusuario.html", voos=voos, meus_voos=carregar_meus_voos())
+
+
+@app.post("/adicionar_ao_carrinho/<codigo>")
+def adicionar_ao_carrinho(codigo):
+    adicionar_voo_usuario(codigo)
+    flash("Voo adicionado aos seus voos!", "sucesso")
+    return redirect(url_for("painel_usuario"))
+
+@app.post("/remover_do_carrinho/<codigo>")
+def remover_do_carrinho(codigo):
+    remover_voo_usuario(codigo)
+    flash("Voo removido dos seus voos.", "sucesso")
+    return redirect(url_for("painel_usuario"))
+
 
 # --- Página de consulta de voos pelo adm ---
 @app.route('/voos')

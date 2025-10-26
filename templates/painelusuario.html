@@ -35,7 +35,7 @@
 
         .container-main {
             margin-top: 110px;
-            max-width: 900px;
+            max-width: 950px;
         }
 
         .card {
@@ -52,17 +52,34 @@
             border-radius: 12px 12px 0 0;
         }
 
-        footer {
-            margin-top: 60px;
-            padding: 20px;
-            background-color: var(--cinza-claro);
-            text-align: center;
-            font-size: 0.9rem;
+        .btn-laranja {
+            background-color: var(--laranja);
+            color: white;
+            font-weight: 600;
+            border: none;
+        }
+
+        .btn-laranja:hover {
+            background-color: var(--laranja-escuro);
+        }
+
+       footer {
+        margin-top: auto;
+        padding: 20px;
+        text-align: center;
+        color: var(--cinza-texto);
+        font-size: 0.9rem;
+        background-color: var(--cinza-claro);
+        }
+
+        .tabela-voos th {
+            background-color: var(--laranja);
+            color: white;
         }
     </style>
 </head>
 
-<body>
+    <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container">
@@ -72,16 +89,6 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/">
                             <i class="fa-solid fa-right-from-bracket me-1"></i> Sair
-                            
-                        </a>
-                        
-                
-                    </li>
-                    
-                    
-                    <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('consultar_voos_usuario') }}">
-                            <i class="fa-solid fa-plane-departure me-1"></i> Consulta voos
                         </a>
                     </li>
                 </ul>
@@ -109,44 +116,191 @@
           {% endif %}
         {% endwith %}
 
-        <!-- Lista de voos disponíveis -->
-        <div class="card">
-            <div class="card-header">
-                <i class="fa-solid fa-list me-2"></i> Voos Disponíveis
+        <!-- 🔍 Busca de voos -->
+        <form method="GET" action="{{ url_for('buscar_voos_usuario') }}" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label for="origem" class="form-label">Origem</label>
+                <input type="text" name="origem" id="origem" class="form-control" placeholder="Ex: São Paulo">
             </div>
-            <div class="card-body table-container">
-                {% if voos %}
-                <table class="table table-striped text-center align-middle">
-                    <thead class="table-warning">
-                        <tr>
-                            <th>Código</th>
-                            <th>Origem</th>
-                            <th>Destino</th>
-                            <th>Preço (R$)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for v in voos %}
-                        <tr>
-                            <td>{{ v.codigo }}</td>
-                            <td>{{ v.origem }}</td>
-                            <td>{{ v.destino }}</td>
-                            <td>{{ "%.2f"|format(v.preco) }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                <p class="text-center text-muted">Nenhum voo disponível no momento.</p>
-                {% endif %}
+            <div class="col-md-5">
+                <label for="destino" class="form-label">Destino</label>
+                <input type="text" name="destino" id="destino" class="form-control" placeholder="Ex: Rio de Janeiro">
             </div>
-        </div>
+            <div class="col-md-2 d-grid">
+                <button type="submit" class="btn btn-laranja"><i class="fa-solid fa-search me-1"></i> Buscar</button>
+            </div>
+        </form>
+
+        <!-- Resultados -->
+        {% if voos is not none %}
+          <h5 class="mt-4">Resultados</h5>
+          {% if voos %}
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>Origem</th>
+                  <th>Destino</th>
+                  <th>Preço</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for v in voos %}
+                <tr>
+                  <td>{{ v.origem }}</td>
+                  <td>{{ v.destino }}</td>
+                  <td>R$ {{ "%.2f"|format(v.preco) }}</td>
+                  <td>
+                    <form action="{{ url_for('adicionar_ao_carrinho', codigo=v.codigo) }}" method="post" style="display:inline;">
+                      <button class="btn btn-sm btn-laranja" type="submit">
+                        <i class="fa-solid fa-plus"></i> Adicionar
+                      </button>
+                    </form>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p class="text-muted">Nenhum voo encontrado para essa busca.</p>
+          {% endif %}
+        {% endif %}
+
+        <!-- ✈ Meus Voos -->
+        <h3 class="mt-5" style="color: var(--laranja); font-weight: 700; text-transform: uppercase;">
+            ✈ Meus Voos
+        </h3>
+
+        {% if meus_voos %}
+        <table class="table table-bordered mt-3">
+          <thead style="background-color: var(--laranja); color: white;">
+            <tr>
+              <th>Origem</th>
+              <th>Destino</th>
+              <th>Preço</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for voo in meus_voos %}
+            <tr>
+              <td>{{ voo.origem }}</td>
+              <td>{{ voo.destino }}</td>
+              <td>R$ {{ "%.2f"|format(voo.preco) }}</td>
+              <td>
+                <form action="{{ url_for('remover_do_carrinho', codigo=voo.codigo) }}" method="post" style="display:inline;">
+                  <button type="submit" class="btn btn-danger btn-sm"
+                    onclick= "return confirm('Deseja remover esse voo da sua lista de voos?')">
+                    <i class="fa-solid fa-trash"></i> Remover
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted mt-3">Você ainda não adicionou voos.</p>
+        {% endif %}
     </div>
 
-    <footer>
-        <p>Trabalho Final - Estrutura de Dados II • Desenvolvido por <strong>Cibele Vale Sacramento</strong> e <strong>Alberman dos Santos</strong></p>
-    </footer>
+   <!-- 🟧 Banner final elegante -->
+<div class="banner-final">
+    <div class="banner-conteudo">
+        <div class="banner-texto">
+            <h2>Pronto para decolar?</h2>
+            <p>Gerencie seus voos com facilidade e viva experiências inesquecíveis nos céus!</p>
+        </div>
+        <div class="banner-imagem">
+            <img src="{{ url_for('static', filename='img/aviao_decor.jpg') }}" alt="Mala de viagem decorativa">
+        </div>
+    </div>
+</div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<footer>
+    <p>Trabalho Final - Estrutura de Dados II • Desenvolvido por 
+        <strong>Cibele Vale Sacramento</strong> e 
+        <strong>Alberman dos Santos</strong>
+    </p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<style>
+    .banner-final {
+        width: 100%;
+        background: linear-gradient(135deg, #ff7b00, #ff9e42);
+        color: white;
+        padding: 60px 40px;
+        margin-top: 80px;
+        border-radius: 20px 20px 0 0;
+        box-shadow: 0 -5px 25px rgba(0,0,0,0.15);
+    }
+
+    .banner-conteudo {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 40px;
+        max-width: 1100px;
+        margin: 0 auto;
+        flex-wrap: wrap;
+    }
+
+    .banner-texto {
+        flex: 1 1 500px;
+    }
+
+    .banner-texto h2 {
+        font-weight: 700;
+        font-size: 2rem;
+        margin-bottom: 15px;
+    }
+
+    .banner-texto p {
+        font-size: 1.15rem;
+        opacity: 0.95;
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    .banner-imagem {
+        flex: 1 1 350px;
+        text-align: right;
+    }
+
+    .banner-imagem img {
+        width: 100%;
+        max-width: 380px;
+        border-radius: 15px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+        object-fit: cover;
+    }
+
+    footer {
+        margin-top: 0;
+        padding: 20px;
+        text-align: center;
+        color: var(--cinza-texto);
+        font-size: 0.9rem;
+        background-color: var(--cinza-claro);
+    }
+
+    @media (max-width: 768px) {
+        .banner-conteudo {
+            flex-direction: column;
+            text-align: center;
+        }
+        .banner-imagem {
+            text-align: center;
+        }
+        .banner-imagem img {
+            max-width: 300px;
+            margin-top: 20px;
+        }
+    }
+</style>
+
 </body>
+
 </html>
