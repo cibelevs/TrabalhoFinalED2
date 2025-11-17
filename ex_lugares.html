@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mapa de Assentos — 20 Lugares</title>
+  <style>
+    :root{
+      --bg:#0f1724;
+      --card:#0b1220;
+      --muted:#9aa6b2;
+      --accent:#ff8a00; /* laranja das cadeiras */
+      --accent-dark:#e57a00;
+      --glass: rgba(255,255,255,0.04);
+      --seat-size:56px;
+      --seat-gap:12px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      min-height:100vh;
+      background: whitesmokes;
+      color: #e6eef6;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+    }
+
+    .container{
+      width:100%;
+      max-width:980px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:14px;
+      padding:24px;
+      box-shadow: 0 8px 30px rgba(2,6,23,0.7);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,0.03);
+    }
+
+    header{
+      display:flex;
+      gap:16px;
+      align-items:center;
+      margin-bottom:18px;
+    }
+
+    .logo {
+      width:60px;
+      height:60px;
+      border-radius:12px;
+      display:grid;
+      place-items:center;
+      background: linear-gradient(135deg, rgba(255,138,0,0.12), rgba(255,138,0,0.04));
+      border:1px solid rgba(255,138,0,0.12);
+      box-shadow: 0 6px 18px rgba(4,8,20,0.5), inset 0 -4px 8px rgba(255,138,0,0.02);
+    }
+    .logo svg{filter: drop-shadow(0 3px 6px rgba(0,0,0,0.45));}
+
+    h1{font-size:20px;margin:0}
+    p.lead{margin:0;color:var(--muted);font-size:13px}
+
+    .main {
+      display:grid;
+      grid-template-columns: 1fr 320px;
+      gap:18px;
+      margin-top:18px;
+    }
+
+    /* Seat map card */
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+      padding:18px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,0.03);
+      box-shadow: 0 6px 20px rgba(2,6,23,0.6);
+    }
+
+    .plane-top{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:10px 0 18px;
+      gap:12px;
+      color:var(--muted);
+    }
+    .cockpit{
+      width:220px;
+      height:48px;
+      border-radius:999px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:var(--muted);
+      font-size:13px;
+      border:1px solid rgba(255,255,255,0.02);
+      box-shadow: inset 0 -6px 18px rgba(0,0,0,0.25);
+    }
+
+    /* Seats grid */
+    .seats {
+      display:grid;
+      grid-template-columns: 1fr auto 1fr; /* left block, aisle, right block */
+      gap:14px;
+      align-items:center;
+      justify-items:center;
+      padding:8px;
+    }
+
+    .col {
+      display:grid;
+      gap:var(--seat-gap);
+    }
+
+    .seat {
+      width:var(--seat-size);
+      height:var(--seat-size);
+      border-radius:10px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      transition: transform .16s ease, box-shadow .16s ease;
+      user-select:none;
+      position:relative;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.03));
+      border:1px solid rgba(255,255,255,0.035);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.45);
+    }
+    .seat:hover { transform: translateY(-6px) scale(1.02); }
+
+    /* airplane icon styled as seat (orange) */
+    .seat .plane-icon {
+      width:36px;
+      height:36px;
+      display:block;
+      fill:var(--accent);
+      filter: drop-shadow(0 4px 8px rgba(255,138,0,0.18));
+      transition: transform .18s ease;
+    }
+
+    /* states */
+    .seat.selected { outline: 3px solid rgba(255,138,0,0.14); box-shadow: 0 10px 26px rgba(229,122,0,0.14); }
+    .seat.selected .plane-icon { transform: rotate(-6deg) scale(1.06); fill: var(--accent-dark); }
+    .seat.occupied { cursor:not-allowed; opacity:0.45; filter:grayscale(0.2); }
+    .seat.occupied .plane-icon { fill: #6b7280; filter:none; transform: none; }
+
+    .seat-label{
+      position:absolute;
+      bottom:6px;
+      right:6px;
+      font-size:10px;
+      color:rgba(255,255,255,0.85);
+      text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+      background: rgba(0,0,0,0.18);
+      padding:2px 6px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,0.03);
+    }
+
+    /* Aisle (empty middle column) */
+    .aisle {
+      height: calc(var(--seat-size) * 5 + var(--seat-gap) * 4);
+      width:36px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:var(--muted);
+      font-size:12px;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      opacity:0.8;
+    }
+
+    /* Right panel */
+    .panel {
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .info {
+      background: var(--glass);
+      padding:12px;
+      border-radius:10px;
+      color:var(--muted);
+      font-size:14px;
+      border:1px solid rgba(255,255,255,0.02);
+    }
+
+    .selected-list{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+    .pill {
+      background: rgba(255,255,255,0.03);
+      padding:8px 10px;
+      border-radius:999px;
+      font-size:13px;
+      border:1px solid rgba(255,255,255,0.02);
+    }
+
+    button.primary {
+      border: none;
+      padding:12px 16px;
+      border-radius:10px;
+      background: linear-gradient(180deg,var(--accent),var(--accent-dark));
+      font-weight:600;
+      color:#071022;
+      cursor:pointer;
+      box-shadow: 0 8px 20px rgba(229,122,0,0.18);
+      transition: transform .12s ease, box-shadow .12s ease;
+      width:100%;
+    }
+    button.primary:active{ transform: translateY(1px) }
+    button.ghost {
+      background:transparent;
+      border:1px solid rgba(255,255,255,0.06);
+      padding:10px;
+      border-radius:10px;
+      color:var(--muted);
+      cursor:pointer;
+    }
+
+    .legend {
+      display:flex;
+      gap:10px;
+      align-items:center;
+      color:var(--muted);
+      font-size:13px;
+      margin-top:12px;
+    }
+    .legend-item {
+      display:flex; gap:8px; align-items:center;
+      background: rgba(255,255,255,0.02);
+      padding:8px 10px; border-radius:999px;
+      border:1px solid rgba(255,255,255,0.01);
+    }
+    .legend-dot {
+      width:12px; height:12px; border-radius:4px; background:var(--accent);
+      box-shadow: 0 3px 8px rgba(229,122,0,0.18);
+    }
+    .legend-dot.gray { background:#6b7280; box-shadow:none; opacity:0.8 }
+
+    footer{
+      margin-top:18px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    @media (max-width:880px){
+      .main{ grid-template-columns: 1fr; }
+      .aisle{ display:none; }
+      .seats{ grid-template-columns: repeat(4,1fr); gap:12px; }
+      .col{ grid-auto-flow: row; grid-auto-rows: auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" role="application" aria-label="Mapa de assentos de aeronave">
+    <header>
+      <div class="logo" aria-hidden="true">
+        <!-- little plane logo -->
+        <svg viewBox="0 0 24 24" width="38" height="38" fill="none" xmlns="http://www.w3.org/2000/svg" >
+          <path d="M2 12c0 0 6.5-1 8.5-1s6 1 6 1l2 1-2 1s-3.1 0.8-6 1S2 12 2 12z" fill="url(#g)"/>
+          <defs>
+            <linearGradient id="g" x1="0" x2="1">
+              <stop offset="0" stop-color="#ffb37a"/>
+              <stop offset="1" stop-color="#ff8a00"/>
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <div>
+        <h1>Selecionar assentos — Voo EX123</h1>
+        <p class="lead">Clique em um ícone laranja para selecionar. Assentos ocupados aparecem em cinza.</p>
+      </div>
+    </header>
+
+    <div class="main">
+      <div class="card" aria-labelledby="mapTitle">
+        <div class="plane-top">
+          <div class="cockpit" id="mapTitle">Cabine — Embarque frontal ● Exit row visual</div>
+        </div>
+
+        <div class="seats" id="seatMap" role="grid" aria-label="Mapa de assentos">
+          <!-- Left column (A,B) - we'll build seats with JS, but include semantic structure -->
+          <div class="col" id="col-left" role="group" aria-label="Lado esquerdo"></div>
+
+          <div class="aisle" aria-hidden="true">Corredor</div>
+
+          <div class="col" id="col-right" role="group" aria-label="Lado direito"></div>
+        </div>
+
+        <div class="legend" aria-hidden="false">
+          <div class="legend-item"><span class="legend-dot" aria-hidden="true"></span> Assento disponível</div>
+          <div class="legend-item"><span class="legend-dot gray" aria-hidden="true"></span> Assento ocupado</div>
+          <div style="flex:1"></div>
+          <div class="legend-item">Total: <strong style="margin-left:8px" id="totalSeats">20</strong></div>
+        </div>
+
+        <footer>
+          <div style="display:flex; gap:12px; align-items:center">
+            <div style="font-size:13px;color:var(--muted)">Layout: 4 assentos por fila (A-B aisle C-D)</div>
+          </div>
+          <div style="font-size:13px;color:var(--muted)">Design bonito ✨</div>
+        </footer>
+      </div>
+
+      <aside class="panel">
+        <div class="card info" aria-live="polite">
+          <strong>Seus assentos</strong>
+          <div class="selected-list" id="selectedList">
+            <span class="pill">Nenhum selecionado</span>
+          </div>
+
+          <div style="margin-top:12px;display:flex;gap:8px">
+            <button class="primary" id="confirmBtn" aria-disabled="true">Confirmar Reserva</button>
+            <button class="ghost" id="clearBtn">Limpar</button>
+          </div>
+
+          <div style="margin-top:12px;color:var(--muted);font-size:13px">
+            <div>Exemplo: selecione até <strong>4</strong> assentos por reserva</div>
+          </div>
+        </div>
+
+        <div class="card info">
+          <strong>Resumo</strong>
+          <div style="margin-top:8px;color:var(--muted)">
+            <div>Assentos ocupados (simulação): <span id="countOccupied">0</span></div>
+            <div style="margin-top:6px">Assentos disponíveis: <span id="countAvailable">20</span></div>
+          </div>
+        </div>
+
+        <div class="card info" aria-hidden="true" style="text-align:center; font-size:13px; color:var(--muted)">
+          Dica: clique em um assento laranja para selecionar. Depois confirme.
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    // JS: cria 20 assentos em layout 5 filas x 4 (A B - C D)
+    (function(){
+      const rows = 5;
+      const seatsPerRow = ['A','B','C','D']; // 4 seats per row
+      const leftIds = ['A','B']; // left side
+      const rightIds = ['C','D']; // right side
+
+      const colLeft = document.getElementById('col-left');
+      const colRight = document.getElementById('col-right');
+      const selectedList = document.getElementById('selectedList');
+      const confirmBtn = document.getElementById('confirmBtn');
+      const clearBtn = document.getElementById('clearBtn');
+      const countOccupied = document.getElementById('countOccupied');
+      const countAvailable = document.getElementById('countAvailable');
+      const totalSeatsEl = document.getElementById('totalSeats');
+
+      totalSeatsEl.textContent = rows * seatsPerRow.length;
+
+      // simulate some occupied seats (for demo)
+      const initiallyOccupied = new Set(['1B','3C','4D']); // sample occupied
+      let occupied = new Set(initiallyOccupied);
+      let selected = new Set();
+
+      function createPlaneSVG(){
+        // return an SVG element (string) for the airplane seat icon
+        return `<svg class="plane-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path d="M21.7 13.35l-5.05-2.02a1 1 0 0 0-.64 0l-3.02 1.01-5.08-2.03a1 1 0 0 0-.86.06l-1.7.95a.5.5 0 0 0 .01.89l3.6 1.81 2.7 4.01a1 1 0 0 0 1.35.32l2.87-1.76 4.63-2.84a1 1 0 0 0 .26-1.57l-1.67-1.9a.5.5 0 0 0-.21-.33z"/>
+        </svg>`;
+      }
+
+      // Create seat element
+      function makeSeat(row, colLetter){
+        const seatId = String(row) + colLetter;
+        const seat = document.createElement('button');
+        seat.className = 'seat';
+        seat.setAttribute('role','gridcell');
+        seat.setAttribute('aria-label', 'Assento '+seatId);
+        seat.dataset.seatid = seatId;
+        seat.innerHTML = createPlaneSVG() + `<span class="seat-label">${seatId}</span>`;
+
+        if (occupied.has(seatId)) {
+          seat.classList.add('occupied');
+          seat.setAttribute('aria-disabled','true');
+        }
+
+        seat.addEventListener('click', (e) => {
+          if (seat.classList.contains('occupied')) return;
+          toggleSelect(seatId, seat);
+        });
+
+        return seat;
+      }
+
+      function toggleSelect(seatId, seatElement){
+        if (selected.has(seatId)) {
+          selected.delete(seatId);
+          seatElement.classList.remove('selected');
+        } else {
+          // limit selection to 4 seats (example)
+          if (selected.size >= 4) {
+            alert('Limite de 4 assentos por reserva (simulação).');
+            return;
+          }
+          selected.add(seatId);
+          seatElement.classList.add('selected');
+        }
+        refreshUI();
+      }
+
+      // build columns: we want rows stacked visually (A,B) then (C,D)
+      // We'll add in order row1-left(A,B), row2-left...
+      for (let r=1; r<=rows; r++){
+        // left column: A,B
+        const wrapperLeft = document.createElement('div');
+        wrapperLeft.style.display = 'flex';
+        wrapperLeft.style.gap = '12px';
+        wrapperLeft.style.alignItems = 'center';
+        wrapperLeft.style.justifyContent = 'center';
+
+        leftIds.forEach(letter => {
+          const s = makeSeat(r, letter);
+          wrapperLeft.appendChild(s);
+        });
+        colLeft.appendChild(wrapperLeft);
+
+        // right column: C,D (we'll append mirrored)
+        const wrapperRight = document.createElement('div');
+        wrapperRight.style.display = 'flex';
+        wrapperRight.style.gap = '12px';
+        wrapperRight.style.alignItems = 'center';
+        wrapperRight.style.justifyContent = 'center';
+
+        rightIds.forEach(letter => {
+          const s = makeSeat(r, letter);
+          wrapperRight.appendChild(s);
+        });
+        colRight.appendChild(wrapperRight);
+      }
+
+      function refreshUI(){
+        // update selected list visual
+        selectedList.innerHTML = '';
+        if (selected.size === 0){
+          const p = document.createElement('span');
+          p.className = 'pill';
+          p.textContent = 'Nenhum selecionado';
+          selectedList.appendChild(p);
+          confirmBtn.setAttribute('aria-disabled','true');
+          confirmBtn.disabled = false; // still allow click to show message if needed
+          confirmBtn.style.opacity = '0.85';
+        } else {
+          [...selected].sort().forEach(sid => {
+            const p = document.createElement('span');
+            p.className = 'pill';
+            p.textContent = sid;
+            selectedList.appendChild(p);
+          });
+          confirmBtn.removeAttribute('aria-disabled');
+          confirmBtn.style.opacity = '1';
+        }
+
+        // counts
+        countOccupied.textContent = occupied.size;
+        countAvailable.textContent = rows * seatsPerRow.length - occupied.size;
+      }
+
+      // confirm action: mark selected as occupied (simulate persistence)
+      confirmBtn.addEventListener('click', () => {
+        if (selected.size === 0) {
+          alert('Nenhum assento selecionado.');
+          return;
+        }
+        // simulate writing reservation: mark as occupied
+        selected.forEach(sid => occupied.add(sid));
+        // clear selected and update DOM seat classes
+        document.querySelectorAll('.seat').forEach(el => {
+          if (occupied.has(el.dataset.seatid)) {
+            el.classList.remove('selected');
+            el.classList.add('occupied');
+            el.setAttribute('aria-disabled','true');
+          }
+        });
+        selected.clear();
+        refreshUI();
+        alert('Reserva confirmada (simulação).');
+      });
+
+      clearBtn.addEventListener('click', () => {
+        // deselect all
+        selected.clear();
+        document.querySelectorAll('.seat.selected').forEach(el => el.classList.remove('selected'));
+        refreshUI();
+      });
+
+      // initialize
+      refreshUI();
+
+    })();
+  </script>
+</body>
+</html>
