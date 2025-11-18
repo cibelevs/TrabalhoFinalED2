@@ -230,6 +230,12 @@ def adicionar_voo():
     voos.append({"codigo": codigo, "origem": origem, "destino": destino, "preco": preco})
     salvar_voos(voos)
     return render_template('pag_adm.html', success="Voo adicionado com sucesso!", voos=voos)
+
+#usuario add voo
+@app.route('/adicionar_voos_usuario')
+def adicionar_voo_usuario():
+    return render_template('adicionar_voos_usuario.html')
+
 # --- Remover Voo ---
 @app.route('/remover_voo', methods=['POST'])
 def remover_voo():

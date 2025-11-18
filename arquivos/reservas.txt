@@ -1,0 +1,7 @@
+{
+    "usuario": nome,
+    "voo": codigo_voo,
+    "passageiro": { "nome": "", "idade": "" },
+    "menor": { "nome": "", "idade": "", "responsavel": "" },
+    "assento": "12B"
+}
