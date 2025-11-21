@@ -231,10 +231,13 @@ def adicionar_voo():
     salvar_voos(voos)
     return render_template('pag_adm.html', success="Voo adicionado com sucesso!", voos=voos)
 
+
 #usuario add voo
 @app.route('/adicionar_voos_usuario')
-def adicionar_voo_usuario():
-    return render_template('adicionar_voos_usuario.html')
+def adicionar_voos_usuario():
+    codigo = request.args.get('codigo')  # recebe o código se vier da edição
+    return render_template('adicionar_voos_usuario.html', codigo=codigo)
+
 
 # --- Remover Voo ---
 @app.route('/remover_voo', methods=['POST'])

@@ -168,7 +168,7 @@
 
 
         <!-- ✈ Meus Voos -->
-        <h3 class="mt-5" style="color: var(--laranja); font-weight: 700; text-transform: uppercase;">
+        <h3 class="mt-5" style="color: var(--laranja); font-weight: 700; text-transform: uppercase; text-align: left;">
             ✈ Meus Voos
         </h3>
 
@@ -190,12 +190,26 @@
               <td>{{ voo.destino }}</td>
               <td>R$ {{ "%.2f"|format(voo.preco) }}</td>
               <td>
+                <!-- Botão Remover -->
                 <form action="{{ url_for('remover_do_carrinho', codigo=voo.codigo) }}" method="post" style="display:inline;">
-                  <button type="submit" class="btn btn-danger btn-sm"
-                    onclick= "return confirm('Deseja remover esse voo da sua lista de voos?')">
-                    <i class="fa-solid fa-trash"></i> Remover
-                  </button>
+                    <button type="submit" class="btn btn-danger btn-sm"
+                        onclick="return confirm('Deseja remover esse voo da sua lista de voos?')">
+                        <i class="fa-solid fa-trash"></i> Remover
+                    </button>
                 </form>
+                <!-- Botão Editar -->
+                <form action="{{ url_for('adicionar_voos_usuario', codigo=voo.codigo) }}" method="get" style="display:inline;">
+                    <button type="submit" class="btn btn-warning btn-sm me-1">
+                        <i class="fa-solid fa-pen"></i> Editar
+                    </button>
+                </form>
+                <!-- Botão Confirmar -->
+                <form action="{{ url_for('remover_do_carrinho', codigo=voo.codigo) }}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-success btn-sm me-1">
+                        <i class="fa-solid fa-check"></i> Confirmar
+                    </button>
+                </form>
+
               </td>
             </tr>
             {% endfor %}
