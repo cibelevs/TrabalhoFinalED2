@@ -1,10 +1,10 @@
-<!-- NOVA PÁGINA: Adicionar Voo com dados de passageiros -->
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Adicionar Voo - Passageiros</title>
+    <title>Gerenciar Passageiros</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
 
     <style>
@@ -19,10 +19,10 @@
         }
         .container-box {
             max-width: 750px;
-            margin: 60px auto;
+            margin: 40px auto;
             background: white;
             padding: 30px;
-            border-radius: 12px;
+            border-radius: 14px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
         .btn-laranja {
@@ -35,94 +35,120 @@
             background-color: var(--laranja-escuro);
         }
         .passageiro-box {
-            padding: 15px;
+            padding: 18px;
             border: 1px solid #ddd;
             border-radius: 10px;
             background: #ffffff;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
+        }
+        .faixa-voltar {
+            width: 100%;
+            background-color: var(--laranja);
+            padding: 12px 20px;
+            font-weight: 600;
+            color: white;
+            font-size: 1.1rem;
+        }
+        .tag-tipo {
+            background: var(--laranja);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
         }
     </style>
 </head>
+
 <body>
 
-<!-- Faixa de voltar -->
-<div style="
-    width: 100%;
-    background-color: var(--laranja);
-    padding: 12px 20px;
-    font-weight: 600;
-    color: white;
-    font-size: 1.1rem;
-">
+<!-- Faixa voltar -->
+<div class="faixa-voltar">
     <a href="{{ url_for('painel_usuario') }}" style="color: white; text-decoration: none;">
         ← Voltar
     </a>
 </div>
 
-
 <div class="container-box">
-    <h2 class="text-center mb-4" style="color: var(--laranja-escuro); font-weight:700;">Adicionar Passageiros ao Voo</h2>
+    <h2 class="text-center mb-4" style="color: var(--laranja-escuro); font-weight:700;">
+        Gerenciar Passageiros do Voo
+    </h2>
+
+    <!-- LISTA DE PASSAGEIROS EXISTENTES -->
+    {% if passageiros_existentes is defined and passageiros_existentes %}
+    <h5 class="mb-3">Passageiros já adicionados:</h5>
+
+        {% for p in passageiros_existentes %}
+        <div class="passageiro-box d-flex justify-content-between align-items-center">
+
+            <div>
+                <span class="tag-tipo">
+                    {{ "Adulto" if p.passageiro else "Criança" }}
+                </span>
+                <strong class="ms-2">
+                    {{ p.passageiro.nome if p.passageiro else p.menor.nome }}
+                </strong>
+            </div>
+
+            <form method="POST" action="/remover_passageiro">
+                <input type="hidden" name="id" value="{{ loop.index0 }}">
+                <button class="btn btn-danger btn-sm">Remover</button>
+            </form>
+
+        </div>
+        {% endfor %}
+    {% endif %}
+
+    <hr class="my-4">
+
+    <!-- ADICIONAR NOVO PASSAGEIRO -->
+    <h5 class="mb-3">Adicionar novo passageiro:</h5>
 
     <form method="POST" action="/confirmar_passageiros">
-
-        <!-- Botão para adicionar passageiros -->
-        <div class="d-grid mb-4">
-            <button type="button" class="btn btn-laranja" onclick="adicionarPassageiro()">
-                + Adicionar Passageiro
-            </button>
-        </div>
-
-        <!-- Área onde os passageiros serão adicionados -->
+        
         <div id="listaPassageiros"></div>
 
-        <button type="submit" class="btn btn-success mt-3 w-100">Confirmar Passageiros</button>
+        <button type="button" class="btn btn-laranja mt-2 mb-3 w-100" onclick="adicionarPassageiro()">
+            + Adicionar Passageiro
+        </button>
+
+        <button type="submit" class="btn btn-success w-100 mt-3">Salvar alterações</button>
+
     </form>
 </div>
 
 <script>
-let contador = 0;
-
 function adicionarPassageiro() {
-    contador++;
 
     const div = document.createElement("div");
     div.classList.add("passageiro-box");
-    div.innerHTML = `
-        <h5>Passageiro ${contador}</h5>
 
-        <label class="form-label mt-2">Nome Completo:</label>
-        <input type="text" name="passageiro_nome_${contador}" class="form-control" required>
+    div.innerHTML = `
+        <label class="form-label">Nome Completo:</label>
+        <input type="text" name="novo_nome[]" class="form-control" required>
 
         <label class="form-label mt-3">Tipo:</label>
-        <select name="passageiro_tipo_${contador}" class="form-select" onchange="alternarCheckbox(${contador})" required>
+        <select name="novo_tipo[]" class="form-select" onchange="mostrarMenor(this)">
             <option value="adulto">Adulto</option>
             <option value="crianca">Criança</option>
         </select>
 
-        <div class="form-check mt-3" id="confirmacao_${contador}" style="display:none;">
-            <input class="form-check-input" type="checkbox" name="confirmacao_acompanhante_${contador}">
-            <label class="form-check-label">
-                Confirmo que o menor de idade estará acompanhado.
-            </label>
+        <div class="form-check mt-3 menor" style="display:none;">
+            <input class="form-check-input" type="checkbox" name="novo_resp[]">
+            <label class="form-check-label">Confirmo que o menor terá acompanhante.</label>
         </div>
 
-        <button type="button" class="btn btn-danger btn-sm mt-3" onclick="this.parentElement.remove()">Remover Passageiro</button>
+        <button type="button" class="btn btn-danger btn-sm mt-3" onclick="this.parentElement.remove()">
+            Remover
+        </button>
     `;
 
     document.getElementById("listaPassageiros").appendChild(div);
 }
 
-function alternarCheckbox(id) {
-    const tipo = document.querySelector(`select[name='passageiro_tipo_${id}']`).value;
-    const checkboxDiv = document.getElementById(`confirmacao_${id}`);
-
-    if (tipo === "crianca") {
-        checkboxDiv.style.display = "block";
-        checkboxDiv.querySelector("input").required = true;
-    } else {
-        checkboxDiv.style.display = "none";
-        checkboxDiv.querySelector("input").required = false;
-    }
+function mostrarMenor(select) {
+    const box = select.parentElement.querySelector(".menor");
+    box.style.display = (select.value === "crianca") ? "block" : "none";
 }
 </script>
 

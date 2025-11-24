@@ -1,6 +1,6 @@
 import os
 import ast
-from flask import Flask, render_template, request, redirect, session, url_for, flash, get_flashed_messages
+from flask import Flask, json, render_template, request, redirect, session, url_for, flash, get_flashed_messages
 
 
 app = Flask(__name__)
@@ -232,11 +232,118 @@ def adicionar_voo():
     return render_template('pag_adm.html', success="Voo adicionado com sucesso!", voos=voos)
 
 
-#usuario add voo
-@app.route('/adicionar_voos_usuario')
+
+# Caminho correto para o arquivo dentro da pasta /arquivos
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CAMINHO_RESERVAS = os.path.join(BASE_DIR, "arquivos", "reservas.txt")
+
+@app.route("/selecionar_voo/<codigo>")
+def selecionar_voo(codigo):
+    session["codigo_voo_selecionado"] = codigo
+    return redirect(url_for("adicionar_voos_usuario"))
+
+
+
+@app.route("/adicionar_voos_usuario")
 def adicionar_voos_usuario():
-    codigo = request.args.get('codigo')  # recebe o código se vier da edição
-    return render_template('adicionar_voos_usuario.html', codigo=codigo)
+
+    
+    usuario = session.get("usuario_logado")
+    codigo_voo = session.get("codigo_voo_selecionado")
+
+    passageiros = []
+
+    if os.path.exists(CAMINHO_RESERVAS):
+        with open(CAMINHO_RESERVAS, "r", encoding="utf-8") as f:
+            for linha in f:
+                r = json.loads(linha)
+                if r["usuario"] == usuario and r["voo"] == codigo_voo:
+                    passageiros.append(r)
+
+    return render_template(
+        "adicionar_voos_usuario.html",
+        passageiros_existentes=passageiros
+    )
+
+
+@app.route("/confirmar_passageiros", methods=["POST"])
+def confirmar_passageiros():
+
+    usuario = session["usuario_logado"]
+    voo = session["codigo_voo_selecionado"]
+
+    # carregar reservas existentes
+    reservas = []
+    if os.path.exists(CAMINHO_RESERVAS):
+        with open(CAMINHO_RESERVAS, "r", encoding="utf-8") as f:
+            reservas = [json.loads(l) for l in f if l.strip()]
+
+    nomes = request.form.getlist("novo_nome[]")
+    tipos = request.form.getlist("novo_tipo[]")
+    resp = request.form.getlist("novo_resp[]")  # lista de "on" sem índice
+
+    for i in range(len(nomes)):
+        nome = nomes[i]
+        tipo = tipos[i]
+
+        if tipo == "adulto":
+            reservas.append({
+                "usuario": usuario,
+                "voo": voo,
+                "passageiro": { "nome": nome },
+                "menor": None
+            })
+
+        else:  # criança
+            acompanhado = "sim" if i < len(resp) else "não"
+
+            reservas.append({
+                "usuario": usuario,
+                "voo": voo,
+                "passageiro": None,
+                "menor": {
+                    "nome": nome,
+                    "responsavel": acompanhado
+                }
+            })
+
+    # salvar tudo
+    with open(CAMINHO_RESERVAS, "w", encoding="utf-8") as f:
+        for r in reservas:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+    return redirect("/adicionar_voos_usuario")
+
+
+
+@app.route("/remover_passageiro", methods=["POST"])
+def remover_passageiro():
+
+    usuario = session["usuario_logado"]
+    voo = session["codigo_voo_selecionado"]
+    id_remove = int(request.form["id"])
+
+    reservas = []
+
+    with open(CAMINHO_RESERVAS, "r", encoding="utf-8") as f:
+        reservas = [json.loads(l) for l in f if l.strip()]
+
+    novas = []
+    index = 0
+    for r in reservas:
+        if r["usuario"] == usuario and r["voo"] == voo:
+            if index != id_remove:
+                novas.append(r)
+            index += 1
+        else:
+            novas.append(r)
+
+    with open(CAMINHO_RESERVAS, "w", encoding="utf-8") as f:
+        for r in novas:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+    return redirect("/adicionar_voos_usuario")
+
 
 
 # --- Remover Voo ---
