@@ -269,8 +269,8 @@ def adicionar_voos_usuario():
 @app.route("/confirmar_passageiros", methods=["POST"])
 def confirmar_passageiros():
 
-    usuario = session["usuario_logado"]
-    voo = session["codigo_voo_selecionado"]
+    usuario = session.get("usuario_logado")
+    voo = session.get("codigo_voo_selecionado")
 
     # carregar reservas existentes
     reservas = []
@@ -319,8 +319,11 @@ def confirmar_passageiros():
 @app.route("/remover_passageiro", methods=["POST"])
 def remover_passageiro():
 
-    usuario = session["usuario_logado"]
-    voo = session["codigo_voo_selecionado"]
+    
+    usuario = session.get("usuario_logado")
+    voo = session.get("codigo_voo_selecionado")
+
+
     id_remove = int(request.form["id"])
 
     reservas = []
@@ -343,7 +346,6 @@ def remover_passageiro():
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
 
     return redirect("/adicionar_voos_usuario")
-
 
 
 # --- Remover Voo ---

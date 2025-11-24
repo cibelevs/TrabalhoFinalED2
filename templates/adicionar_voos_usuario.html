@@ -13,10 +13,12 @@
             --laranja-escuro: #e56c00;
             --cinza-claro: #f7f7f7;
         }
+
         body {
             background: var(--cinza-claro);
             font-family: "Segoe UI", sans-serif;
         }
+
         .container-box {
             max-width: 750px;
             margin: 40px auto;
@@ -25,15 +27,18 @@
             border-radius: 14px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
+
         .btn-laranja {
             background-color: var(--laranja);
             color: white;
             font-weight: 600;
             border: none;
         }
+
         .btn-laranja:hover {
             background-color: var(--laranja-escuro);
         }
+
         .passageiro-box {
             padding: 18px;
             border: 1px solid #ddd;
@@ -41,6 +46,7 @@
             background: #ffffff;
             margin-bottom: 14px;
         }
+
         .faixa-voltar {
             width: 100%;
             background-color: var(--laranja);
@@ -49,6 +55,7 @@
             color: white;
             font-size: 1.1rem;
         }
+
         .tag-tipo {
             background: var(--laranja);
             color: white;
@@ -70,13 +77,23 @@
 </div>
 
 <div class="container-box">
+
+    <!-- Flash Messages -->
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+        {% if mensagens %}
+            {% for categoria, msg in mensagens %}
+                <div class="alert alert-{{ categoria }} mt-2">{{ msg }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     <h2 class="text-center mb-4" style="color: var(--laranja-escuro); font-weight:700;">
         Gerenciar Passageiros do Voo
     </h2>
 
     <!-- LISTA DE PASSAGEIROS EXISTENTES -->
     {% if passageiros_existentes is defined and passageiros_existentes %}
-    <h5 class="mb-3">Passageiros já adicionados:</h5>
+        <h5 class="mb-3">Passageiros já adicionados:</h5>
 
         {% for p in passageiros_existentes %}
         <div class="passageiro-box d-flex justify-content-between align-items-center">
@@ -90,7 +107,7 @@
                 </strong>
             </div>
 
-            <form method="POST" action="/remover_passageiro">
+            <form method="POST" action="/remover_passageiro" onsubmit="return confirmarRemocao()">
                 <input type="hidden" name="id" value="{{ loop.index0 }}">
                 <button class="btn btn-danger btn-sm">Remover</button>
             </form>
@@ -105,19 +122,27 @@
     <h5 class="mb-3">Adicionar novo passageiro:</h5>
 
     <form method="POST" action="/confirmar_passageiros">
-        
+
         <div id="listaPassageiros"></div>
 
         <button type="button" class="btn btn-laranja mt-2 mb-3 w-100" onclick="adicionarPassageiro()">
             + Adicionar Passageiro
         </button>
 
-        <button type="submit" class="btn btn-success w-100 mt-3">Salvar alterações</button>
+        <button type="submit" class="btn btn-success w-100 mt-3">
+            Salvar alterações
+        </button>
 
     </form>
 </div>
 
 <script>
+/* Confirmação elegante de remoção */
+function confirmarRemocao() {
+    return confirm("Gostaria de remover essa pessoa da sua reserva?");
+}
+
+/* Adiciona um novo bloco de passageiro */
 function adicionarPassageiro() {
 
     const div = document.createElement("div");
@@ -134,7 +159,7 @@ function adicionarPassageiro() {
         </select>
 
         <div class="form-check mt-3 menor" style="display:none;">
-            <input class="form-check-input" type="checkbox" name="novo_resp[]">
+            <input class="form-check-input menor-check" type="checkbox" name="novo_resp[]">
             <label class="form-check-label">Confirmo que o menor terá acompanhante.</label>
         </div>
 
@@ -146,9 +171,19 @@ function adicionarPassageiro() {
     document.getElementById("listaPassageiros").appendChild(div);
 }
 
+/* Exibe campos do menor + torna checkbox obrigatório */
 function mostrarMenor(select) {
     const box = select.parentElement.querySelector(".menor");
-    box.style.display = (select.value === "crianca") ? "block" : "none";
+    const checkbox = box.querySelector(".menor-check");
+
+    if (select.value === "crianca") {
+        box.style.display = "block";
+        checkbox.required = true;
+    } else {
+        box.style.display = "none";
+        checkbox.required = false;
+        checkbox.checked = false;
+    }
 }
 </script>
 
