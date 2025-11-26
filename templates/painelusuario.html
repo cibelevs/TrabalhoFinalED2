@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Painel do Usuário</title>
-
+    <h1 class="titulo mb-4">Painel do Usuário</h1>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
@@ -86,7 +85,14 @@
             <a class="navbar-brand" href="/">✈ Sistema de Controle de Voos</a>
             <div class="collapse navbar-collapse justify-content-end">
                 <ul class="navbar-nav">
+                    <li  class="nav-item">
+                        <a class = "nav-link" href="/">
+                            <i class="fa-solid fa-right-from-bracket me-1"></i> Voos Confirmados
+
+                        </a>
+                    </li>
                     <li class="nav-item">
+                        
                         <a class="nav-link" href="/">
                             <i class="fa-solid fa-right-from-bracket me-1"></i> Sair
                         </a>
@@ -172,51 +178,67 @@
             ✈ Meus Voos
         </h3>
 
+    {% if meus_voos %}
+    <div class="table-responsive mt-3">
+        <table class="table table-hover align-middle shadow-sm" style="border-radius: 12px; overflow: hidden;">
+            <thead>
+                <tr>
+                    <th style="padding: 14px;">Código</th>
+                    <th>Origem</th>
+                    <th>Destino</th>
+                    <th>Preço</th>
+                    <th class="text-center">Ações</th>
+                </tr>
+            </thead>
 
-        {% if meus_voos %}
-        <table class="table table-bordered mt-3">
-          <thead style="background-color: var(--laranja); color: white;">
-            <tr>
-              <th>Origem</th>
-              <th>Destino</th>
-              <th>Preço</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for voo in meus_voos %}
-            <tr>
-              <td>{{ voo.origem }}</td>
-              <td>{{ voo.destino }}</td>
-              <td>R$ {{ "%.2f"|format(voo.preco) }}</td>
-              <td>
-                <!-- Botão Remover -->
-                <form action="{{ url_for('remover_do_carrinho', codigo=voo.codigo) }}" method="post" style="display:inline;">
-                    <button type="submit" class="btn btn-danger btn-sm"
-                        onclick="return confirm('Deseja remover esse voo da sua lista de voos?')">
-                        <i class="fa-solid fa-trash"></i> Remover
-                    </button>
-                </form>
-                <!-- Botão Editar -->
-                <form action="{{ url_for('adicionar_voos_usuario', codigo=voo.codigo) }}" method="get" style="display:inline;">
-                    <button type="submit" class="btn btn-warning btn-sm me-1">
-                        <i class="fa-solid fa-pen"></i> Editar
-                    </button>
-                </form>
-                <!-- Botão Confirmar -->
-                <form action="{{ url_for('confirmar_voo', codigo=voo.codigo) }}" method="post" style="display:inline;">
-                    <button type="submit" class="btn btn-success btn-sm me-1">
-                        <i class="fa-solid fa-check"></i> Confirmar
-                    </button>
-                </form>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
+            <tbody>
+                {% for voo in meus_voos %}
+                <tr style="background-color: #f5b18c;">
+                    <td>{{voo.codigo}}</td>
+                    <td>{{ voo.origem }}</td>
+                    <td>{{ voo.destino }}</td>
+                    <td>
+                        {{ "%.2f"|format(voo.preco) }}
+                    </td>
+
+                    <td class="text-center">
+
+                        <!-- REMOVER -->
+                        <form action="{{ url_for('remover_do_carrinho', codigo=voo.codigo) }}"
+                              method="post" style="display:inline;">
+                            <button class="btn btn-danger btn-sm"
+                                    onclick="return confirm('Deseja remover esse voo?')">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+
+                        <!-- EDITAR PASSAGEIROS -->
+                        <form action="{{ url_for('selecionar_voo', codigo=voo.codigo) }}" 
+                              method="get" style="display:inline;">
+                            <button class="btn btn-warning btn-sm">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                        </form>
+
+                        <!-- CONFIRMAR VOO -->
+                        <form action="{{ url_for('confirmar_voo', codigo=voo.codigo) }}" 
+                              method="post" style="display:inline;">
+                            <button class="btn btn-success btn-sm">
+                                <i class="fa-solid fa-check"></i>
+                            </button>
+                        </form>
+
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
-        {% else %}
-        <p class="text-muted mt-3">Você ainda não adicionou voos.</p>
-        {% endif %}
+    </div>
+
+    {% else %}
+    <p class="text-muted mt-3">Você ainda não adicionou voos.</p>
+    {% endif %}
+
     </div>
 
 <div class="banner-final">
