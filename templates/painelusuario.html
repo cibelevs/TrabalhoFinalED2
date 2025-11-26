@@ -204,12 +204,11 @@
                     </button>
                 </form>
                 <!-- Botão Confirmar -->
-                <form action="{{ url_for('remover_do_carrinho', codigo=voo.codigo) }}" method="post" style="display:inline;">
+                <form action="{{ url_for('confirmar_voo', codigo=voo.codigo) }}" method="post" style="display:inline;">
                     <button type="submit" class="btn btn-success btn-sm me-1">
                         <i class="fa-solid fa-check"></i> Confirmar
                     </button>
                 </form>
-
               </td>
             </tr>
             {% endfor %}
@@ -220,7 +219,6 @@
         {% endif %}
     </div>
 
-   <!-- 🟧 Banner final elegante -->
 <div class="banner-final">
     <div class="banner-conteudo">
         <div class="banner-texto">

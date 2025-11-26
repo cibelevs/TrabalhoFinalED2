@@ -232,33 +232,27 @@ def adicionar_voo():
     return render_template('pag_adm.html', success="Voo adicionado com sucesso!", voos=voos)
 
 
-
-# Caminho correto para o arquivo dentro da pasta /arquivos
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CAMINHO_RESERVAS = os.path.join(BASE_DIR, "arquivos", "reservas.txt")
-
+# usuario seleciona voo
 @app.route("/selecionar_voo/<codigo>")
 def selecionar_voo(codigo):
     session["codigo_voo_selecionado"] = codigo
+
+    # Inicializa lista caso ainda não exista
+    if "passageiros_voo" not in session:
+        session["passageiros_voo"] = {}
+
+    if codigo not in session["passageiros_voo"]:
+        session["passageiros_voo"][codigo] = []
+
     return redirect(url_for("adicionar_voos_usuario"))
 
-
-
+# usuario adiciona voos
 @app.route("/adicionar_voos_usuario")
 def adicionar_voos_usuario():
 
-    
-    usuario = session.get("usuario_logado")
-    codigo_voo = session.get("codigo_voo_selecionado")
+    voo = session.get("codigo_voo_selecionado")
 
-    passageiros = []
-
-    if os.path.exists(CAMINHO_RESERVAS):
-        with open(CAMINHO_RESERVAS, "r", encoding="utf-8") as f:
-            for linha in f:
-                r = json.loads(linha)
-                if r["usuario"] == usuario and r["voo"] == codigo_voo:
-                    passageiros.append(r)
+    passageiros = session["passageiros_voo"].get(voo, [])
 
     return render_template(
         "adicionar_voos_usuario.html",
@@ -266,86 +260,71 @@ def adicionar_voos_usuario():
     )
 
 
+# confirma passageiros do usuario
 @app.route("/confirmar_passageiros", methods=["POST"])
 def confirmar_passageiros():
 
-    usuario = session.get("usuario_logado")
     voo = session.get("codigo_voo_selecionado")
-
-    # carregar reservas existentes
-    reservas = []
-    if os.path.exists(CAMINHO_RESERVAS):
-        with open(CAMINHO_RESERVAS, "r", encoding="utf-8") as f:
-            reservas = [json.loads(l) for l in f if l.strip()]
 
     nomes = request.form.getlist("novo_nome[]")
+    cpfs = request.form.getlist("novo_cpf[]")
     tipos = request.form.getlist("novo_tipo[]")
-    resp = request.form.getlist("novo_resp[]")  # lista de "on" sem índice
+
+    novos = []
 
     for i in range(len(nomes)):
-        nome = nomes[i]
-        tipo = tipos[i]
+        novos.append({
+            "nome": nomes[i],
+            "cpf": cpfs[i],
+            "tipo": tipos[i]
+        })
 
-        if tipo == "adulto":
-            reservas.append({
-                "usuario": usuario,
-                "voo": voo,
-                "passageiro": { "nome": nome },
-                "menor": None
-            })
-
-        else:  # criança
-            acompanhado = "sim" if i < len(resp) else "não"
-
-            reservas.append({
-                "usuario": usuario,
-                "voo": voo,
-                "passageiro": None,
-                "menor": {
-                    "nome": nome,
-                    "responsavel": acompanhado
-                }
-            })
-
-    # salvar tudo
-    with open(CAMINHO_RESERVAS, "w", encoding="utf-8") as f:
-        for r in reservas:
-            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    # adiciona aos existentes
+    session["passageiros_voo"][voo].extend(novos)
+    session.modified = True
 
     return redirect("/adicionar_voos_usuario")
 
 
+@app.route("/confirmar_voo/<codigo>", methods=["POST"])
+def confirmar_voo(codigo):
 
-@app.route("/remover_passageiro", methods=["POST"])
-def remover_passageiro():
+    codigo = str(codigo)
 
-    
-    usuario = session.get("usuario_logado")
-    voo = session.get("codigo_voo_selecionado")
+    # lista de voos existentes
+    voos = carregar_voos()
 
+    # procurar voo na lista
+    voo_encontrado = next((v for v in voos if str(v.get("codigo")) == codigo), None)
 
-    id_remove = int(request.form["id"])
+    if not voo_encontrado:
+        flash("Voo não encontrado.", "danger")
+        return redirect(url_for("painel_usuario"))
 
-    reservas = []
+    # cria estruturas
+    if "voos_pendentes" not in session:
+        session["voos_pendentes"] = []
+    if "voos_confirmados" not in session:
+        session["voos_confirmados"] = []
 
-    with open(CAMINHO_RESERVAS, "r", encoding="utf-8") as f:
-        reservas = [json.loads(l) for l in f if l.strip()]
+    # REMOVE dos pendentes
+    session["voos_pendentes"] = [
+        v for v in session["voos_pendentes"] 
+        if str(v["codigo"]) != codigo
+    ]
 
-    novas = []
-    index = 0
-    for r in reservas:
-        if r["usuario"] == usuario and r["voo"] == voo:
-            if index != id_remove:
-                novas.append(r)
-            index += 1
-        else:
-            novas.append(r)
+    # ADICIONA aos confirmados
+    session["voos_confirmados"].append({
+        "codigo": codigo,
+        "origem": voo_encontrado["origem"],
+        "destino": voo_encontrado["destino"]
+    })
 
-    with open(CAMINHO_RESERVAS, "w", encoding="utf-8") as f:
-        for r in novas:
-            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    session.modified = True
 
-    return redirect("/adicionar_voos_usuario")
+    flash("Voo confirmado com sucesso! ✈️", "success")
+    return redirect(url_for("painel_usuario"))
+
 
 
 # --- Remover Voo ---

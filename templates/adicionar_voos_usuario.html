@@ -69,7 +69,6 @@
 
 <body>
 
-<!-- Faixa voltar -->
 <div class="faixa-voltar">
     <a href="{{ url_for('painel_usuario') }}" style="color: white; text-decoration: none;">
         ← Voltar
@@ -78,33 +77,21 @@
 
 <div class="container-box">
 
-    <!-- Flash Messages -->
-    {% with mensagens = get_flashed_messages(with_categories=true) %}
-        {% if mensagens %}
-            {% for categoria, msg in mensagens %}
-                <div class="alert alert-{{ categoria }} mt-2">{{ msg }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-
     <h2 class="text-center mb-4" style="color: var(--laranja-escuro); font-weight:700;">
         Gerenciar Passageiros do Voo
     </h2>
 
-    <!-- LISTA DE PASSAGEIROS EXISTENTES -->
-    {% if passageiros_existentes is defined and passageiros_existentes %}
+    {% if passageiros_existentes %}
         <h5 class="mb-3">Passageiros já adicionados:</h5>
 
         {% for p in passageiros_existentes %}
         <div class="passageiro-box d-flex justify-content-between align-items-center">
-
+            
             <div>
-                <span class="tag-tipo">
-                    {{ "Adulto" if p.passageiro else "Criança" }}
-                </span>
-                <strong class="ms-2">
-                    {{ p.passageiro.nome if p.passageiro else p.menor.nome }}
-                </strong>
+                <span class="tag-tipo">{{ p.tipo|capitalize }}</span>
+                <strong class="ms-2">{{ p.nome }}</strong>
+                <br>
+                <small>CPF: {{ p.cpf }}</small>
             </div>
 
             <form method="POST" action="/remover_passageiro" onsubmit="return confirmarRemocao()">
@@ -118,7 +105,6 @@
 
     <hr class="my-4">
 
-    <!-- ADICIONAR NOVO PASSAGEIRO -->
     <h5 class="mb-3">Adicionar novo passageiro:</h5>
 
     <form method="POST" action="/confirmar_passageiros">
@@ -132,19 +118,17 @@
         <button type="submit" class="btn btn-success w-100 mt-3">
             Salvar alterações
         </button>
-
     </form>
+
 </div>
 
 <script>
-/* Confirmação elegante de remoção */
 function confirmarRemocao() {
     return confirm("Gostaria de remover essa pessoa da sua reserva?");
 }
 
-/* Adiciona um novo bloco de passageiro */
+/* ADICIONAR NOVO PASSAGEIRO */
 function adicionarPassageiro() {
-
     const div = document.createElement("div");
     div.classList.add("passageiro-box");
 
@@ -152,16 +136,14 @@ function adicionarPassageiro() {
         <label class="form-label">Nome Completo:</label>
         <input type="text" name="novo_nome[]" class="form-control" required>
 
+        <label class="form-label mt-3">CPF:</label>
+        <input type="text" name="novo_cpf[]" class="form-control" required>
+
         <label class="form-label mt-3">Tipo:</label>
-        <select name="novo_tipo[]" class="form-select" onchange="mostrarMenor(this)">
+        <select name="novo_tipo[]" class="form-select">
             <option value="adulto">Adulto</option>
             <option value="crianca">Criança</option>
         </select>
-
-        <div class="form-check mt-3 menor" style="display:none;">
-            <input class="form-check-input menor-check" type="checkbox" name="novo_resp[]">
-            <label class="form-check-label">Confirmo que o menor terá acompanhante.</label>
-        </div>
 
         <button type="button" class="btn btn-danger btn-sm mt-3" onclick="this.parentElement.remove()">
             Remover
@@ -169,21 +151,6 @@ function adicionarPassageiro() {
     `;
 
     document.getElementById("listaPassageiros").appendChild(div);
-}
-
-/* Exibe campos do menor + torna checkbox obrigatório */
-function mostrarMenor(select) {
-    const box = select.parentElement.querySelector(".menor");
-    const checkbox = box.querySelector(".menor-check");
-
-    if (select.value === "crianca") {
-        box.style.display = "block";
-        checkbox.required = true;
-    } else {
-        box.style.display = "none";
-        checkbox.required = false;
-        checkbox.checked = false;
-    }
 }
 </script>
 
