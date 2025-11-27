@@ -85,17 +85,16 @@
             <a class="navbar-brand" href="/">✈ Sistema de Controle de Voos</a>
             <div class="collapse navbar-collapse justify-content-end">
                 <ul class="navbar-nav">
-                    <li  class="nav-item">
-                        <a class = "nav-link" href="/">
-                            <i class="fa-solid fa-right-from-bracket me-1"></i> Voos Confirmados
-
-                        </a>
-                    </li>
+                   <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('voos_confirmados') }}">
+                        <i class="fa-solid fa-plane-circle-check me-1"></i> Voos Confirmados
+                    </a>
+                   </li> 
                     <li class="nav-item">
-                        
-                        <a class="nav-link" href="/">
+                        <a class="nav-link" href="{{ url_for('logout') }}">
                             <i class="fa-solid fa-right-from-bracket me-1"></i> Sair
                         </a>
+
                     </li>
                 </ul>
             </div>
@@ -173,10 +172,21 @@
         {% endif %}
 
 
-        <!-- ✈ Meus Voos -->
+        <div class="alert alert-warning mt-4 shadow-sm" style="border-left: 6px solid var(--laranja);">
+            <strong>Voos aguardando confirmação</strong>  
+            <p class="mt-2 mb-0" style="color: #5a5a5a;">
+                Os voos listados abaixo ainda <strong>não estão cadastrados definitivamente</strong> no sistema.  
+                Eles representam reservas pendentes que você adicionou e que precisam ser confirmadas para serem registradas como voos válidos.
+                <br><br>
+                Após clicar em <strong>confirmar</strong>, o voo será movido automaticamente para a aba
+                <em>"Voos Confirmados"</em> e <strong>não aparecerá mais nesta lista</strong>.
+            </p>
+        </div>
+
         <h3 class="mt-5" style="color: var(--laranja); font-weight: 700; text-transform: uppercase; text-align: left;">
-            ✈ Meus Voos
+            ✈ Meus Voos Não Confirmados
         </h3>
+
 
     {% if meus_voos %}
     <div class="table-responsive mt-3">

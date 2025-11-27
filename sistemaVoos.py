@@ -2,7 +2,6 @@ import os
 import ast
 from flask import Flask, json, render_template, request, redirect, session, url_for, flash, get_flashed_messages
 
-
 app = Flask(__name__)
 app.secret_key = "sua_chave_secreta_aqui"  # pode ser qualquer string
 
@@ -85,6 +84,8 @@ def login_usuario_post():
     # procura usuário com nome e senha corretos
     usuario_valido = any(u.get('nome') == nome and u.get('senha') == senha for u in usuarios)
     if usuario_valido:
+        session["usuario_logado"] = nome
+        session.modified = True
         return redirect(url_for('painel_usuario'))
 
     # login inválido
@@ -126,8 +127,28 @@ def painel_admin():
 
 @app.route("/painel_usuario")
 def painel_usuario():
-    meus_voos = carregar_meus_voos()
-    return render_template("painelusuario.html", meus_voos=meus_voos)
+    usuario = session.get("usuario_logado")
+    if not usuario:
+        flash("Faça login primeiro.", "erro")
+        return redirect(url_for("login_usuario"))
+
+    # garantir estruturas na sessão
+    meus_voos = session.get("meus_voos", [])
+    voos_pendentes = session.get("voos_pendentes", [])
+
+    # filtrar só os do usuário
+    meus_voos_usuario = [
+        v for v in meus_voos if v.get("usuario") == usuario and not v.get("confirmado", False)
+    ]
+    pendentes_usuario = [
+        v for v in voos_pendentes if v.get("usuario") == usuario
+    ]
+
+    return render_template(
+        "painelusuario.html",
+        meus_voos=meus_voos_usuario,
+        voos_pendentes=pendentes_usuario
+    )
 
 
 
@@ -138,18 +159,42 @@ def carregar_meus_voos():
     return session["meus_voos"]
 
 def adicionar_voo_usuario(codigo_voo):
+    usuario = session.get("usuario_logado")
+    if not usuario:
+        return False
+
+    # Carrega lista de voos disponíveis
     todos = carregar_voos()
     voo = next((v for v in todos if v["codigo"] == codigo_voo), None)
 
     if not voo:
         return False
 
-    meus_voos = carregar_meus_voos()
-    if voo not in meus_voos:
-        meus_voos.append(voo)
-        session["meus_voos"] = meus_voos
-        session.modified = True
+    # Garantir lista da sessão
+    meus_voos = session.get("meus_voos", [])
+
+    # Verifica se o voo já existe para esse usuário (sem KeyError)
+    for v in meus_voos:
+        if v.get("codigo") == voo["codigo"] and v.get("usuario") == usuario:
+            return True  # já existe, não duplica
+
+    # Criar voo NÃO confirmado
+    novo_voo = {
+        "codigo": voo["codigo"],
+        "origem": voo["origem"],
+        "destino": voo["destino"],
+        "preco": voo["preco"],
+        "usuario": usuario,
+        "confirmado": False,
+        "passageiros": []
+    }
+
+    meus_voos.append(novo_voo)
+
+    session["meus_voos"] = meus_voos
+    session.modified = True
     return True
+
 
 
 def remover_voo_usuario(codigo_voo):
@@ -175,6 +220,8 @@ def buscar_voos_usuario():
 def adicionar_ao_carrinho(codigo):
     adicionar_voo_usuario(codigo)
     flash("Voo adicionado aos seus voos!", "sucesso")
+
+    
     return redirect(url_for("painel_usuario"))
 
 @app.post("/remover_do_carrinho/<codigo>")
@@ -260,6 +307,22 @@ def adicionar_voos_usuario():
     )
 
 
+@app.route("/voos_confirmados")
+def voos_confirmados():
+    usuario = session.get("usuario_logado")
+
+    if not usuario:
+        return redirect(url_for("login_usuario"))
+
+    voos = [
+        v for v in session.get("voos_pendentes", [])
+        if v.get("usuario") == usuario
+    ]
+
+    return render_template("voos_confirmados.html", voos=voos)
+
+
+
 # confirma passageiros do usuario
 @app.route("/confirmar_passageiros", methods=["POST"])
 def confirmar_passageiros():
@@ -286,43 +349,59 @@ def confirmar_passageiros():
     return redirect("/adicionar_voos_usuario")
 
 
+@app.route("/logout")
+def logout():
+    session.clear()
+    flash("Você saiu da sua conta.", "success")
+    return redirect(url_for("login_usuario"))
+
+
+
+
 @app.route("/confirmar_voo/<codigo>", methods=["POST"])
 def confirmar_voo(codigo):
-
     codigo = str(codigo)
+    usuario = session.get("usuario_logado")
+    if not usuario:
+        flash("Faça login primeiro.", "erro")
+        return redirect(url_for("login_usuario"))
 
-    # lista de voos existentes
-    voos = carregar_voos()
+    # Garantir listas
+    meus_voos = session.get("meus_voos", [])
+    voos_pendentes = session.get("voos_pendentes", [])
 
-    # procurar voo na lista
-    voo_encontrado = next((v for v in voos if str(v.get("codigo")) == codigo), None)
+    # Procurar e remover o voo em meus_voos (apenas do usuário)
+    voo_encontrado = None
+    novos_meus_voos = []
+    for v in meus_voos:
+        if str(v.get("codigo")) == codigo and v.get("usuario") == usuario:
+            voo_encontrado = v
+            # não adiciona à lista nova = efetivamente remove
+        else:
+            novos_meus_voos.append(v)
+
+    session["meus_voos"] = novos_meus_voos
 
     if not voo_encontrado:
-        flash("Voo não encontrado.", "danger")
+        flash("Voo não encontrado entre seus voos não confirmados.", "danger")
         return redirect(url_for("painel_usuario"))
 
-    # cria estruturas
-    if "voos_pendentes" not in session:
-        session["voos_pendentes"] = []
-    if "voos_confirmados" not in session:
-        session["voos_confirmados"] = []
+    # Atualizar o estado / certificações do objeto antes de mover
+    voo_encontrado["confirmado"] = True
+    voo_encontrado.setdefault("passageiros", voo_encontrado.get("passageiros", []))
+    voo_encontrado["usuario"] = usuario  # garante consistência
 
-    # REMOVE dos pendentes
-    session["voos_pendentes"] = [
-        v for v in session["voos_pendentes"] 
-        if str(v["codigo"]) != codigo
-    ]
-
-    # ADICIONA aos confirmados
-    session["voos_confirmados"].append({
-        "codigo": codigo,
-        "origem": voo_encontrado["origem"],
-        "destino": voo_encontrado["destino"]
-    })
+    # Evitar duplicados em voos_pendentes (mesmo codigo + usuario)
+    existe = any(
+        vp.get("codigo") == voo_encontrado.get("codigo") and vp.get("usuario") == usuario
+        for vp in voos_pendentes
+    )
+    if not existe:
+        voos_pendentes.append(voo_encontrado)
+        session["voos_pendentes"] = voos_pendentes
 
     session.modified = True
-
-    flash("Voo confirmado com sucesso! ✈️", "success")
+    flash("Voo disponível na aba Voos Pendentes! (confirmado)", "success")
     return redirect(url_for("painel_usuario"))
 
 
