@@ -141,31 +141,44 @@
           <h5 class="mt-4">Resultados</h5>
           {% if voos %}
             <table class="table">
-              <thead>
-                <tr>
-                  <th>Origem</th>
-                  <th>Destino</th>
-                  <th>Preço</th>
-                  <th>Ação</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for v in voos %}
-                <tr>
-                  <td>{{ v.origem }}</td>
-                  <td>{{ v.destino }}</td>
-                  <td>R$ {{ "%.2f"|format(v.preco) }}</td>
-                  <td>
-                    <form action="{{ url_for('adicionar_ao_carrinho', codigo=v.codigo) }}" method="post" style="display:inline;">
-                      <button class="btn btn-sm btn-laranja" type="submit">
-                        <i class="fa-solid fa-plus"></i> Adicionar
-                      </button>
-                    </form>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+                <thead>
+                    <tr>
+                    <th>Código</th>
+                    <th>Origem</th>
+                    <th>Destino</th>
+                    <th>Data</th>
+                    <th>Horário</th>
+                    <th>Assentos Totais</th>
+                    <th>Assentos Disponíveis</th>
+                    <th>Preço</th>
+                    <th>Ação</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for v in voos %}
+                    <tr>
+                    <td>{{ v.codigo }}</td>
+                    <td>{{ v.origem }}</td>
+                    <td>{{ v.destino }}</td>
+                    <td>{{ v.data }}</td>
+                    <td>{{ v.horario }}</td>
+                    <td>{{ v.assentos_totais }}</td>
+                    <td>{{ v.assentos_disponiveis }}</td>
+                    <td>R$ {{ "%.2f"|format(v.preco) }}</td>
+
+                    <td>
+                        <form action="{{ url_for('adicionar_ao_carrinho', codigo=v.codigo) }}" method="post" style="display:inline;">
+                        <button class="btn btn-sm btn-laranja" type="submit">
+                            <i class="fa-solid fa-plus"></i> Adicionar
+                        </button>
+                        </form>
+                    </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                </table>
+
           {% else %}
             <p class="text-muted">Nenhum voo encontrado para essa busca.</p>
           {% endif %}
@@ -189,60 +202,65 @@
 
 
     {% if meus_voos %}
-    <div class="table-responsive mt-3">
-        <table class="table table-hover align-middle shadow-sm" style="border-radius: 12px; overflow: hidden;">
-            <thead>
-                <tr>
-                    <th style="padding: 14px;">Código</th>
-                    <th>Origem</th>
-                    <th>Destino</th>
-                    <th>Preço</th>
-                    <th class="text-center">Ações</th>
-                </tr>
-            </thead>
+    <div class="table-responsive mt-4">
+      <table class="table table-hover align-middle shadow-sm elegante-tabela">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Origem</th>
+                <th>Destino</th>
+                <th>Data</th>
+                <th>Horário</th>
+                <th>Assentos Totais</th>
+                <th>Assentos Disponíveis</th>
+                <th>Preço</th>
+                <th class="text-center">Ações</th>
+            </tr>
+        </thead>
 
-            <tbody>
-                {% for voo in meus_voos %}
-                <tr style="background-color: #f5b18c;">
-                    <td>{{voo.codigo}}</td>
-                    <td>{{ voo.origem }}</td>
-                    <td>{{ voo.destino }}</td>
-                    <td>
-                        {{ "%.2f"|format(voo.preco) }}
-                    </td>
+        <tbody>
+            {% for voo in meus_voos %}
+            <tr>
+                <td><strong>{{ voo.codigo }}</strong></td>
+                <td>{{ voo.origem }}</td>
+                <td>{{ voo.destino }}</td>
+                <td>{{ voo.data }}</td>
+                <td>{{ voo.horario }}</td>
+                <td>{{ voo.assentos_totais }}</td>
+                <td>{{ voo.assentos_disponiveis }}</td>
+                <td><strong>R$ {{ "%.2f"|format(voo.preco) }}</strong></td>
 
-                    <td class="text-center">
+                <td class="text-center">
 
-                        <!-- REMOVER -->
-                        <form action="{{ url_for('remover_do_carrinho', codigo=voo.codigo) }}"
-                              method="post" style="display:inline;">
-                            <button class="btn btn-danger btn-sm"
-                                    onclick="return confirm('Deseja remover esse voo?')">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </form>
+                    <!-- REMOVER -->
+                    <form action="{{ url_for('remover_do_carrinho', codigo=voo.codigo) }}"
+                        method="post" style="display:inline;">
+                        <button class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </form>
 
-                        <!-- EDITAR PASSAGEIROS -->
-                        <form action="{{ url_for('selecionar_voo', codigo=voo.codigo) }}" 
-                              method="get" style="display:inline;">
-                            <button class="btn btn-warning btn-sm">
-                                <i class="fa-solid fa-pen"></i>
-                            </button>
-                        </form>
+                    <!-- EDITAR PASSAGEIROS -->
+                    <form action="{{ url_for('selecionar_voo', codigo=voo.codigo) }}" 
+                        method="get" style="display:inline;">
+                        <button class="btn btn-outline-warning btn-sm rounded-pill px-3">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                    </form>
 
-                        <!-- CONFIRMAR VOO -->
-                        <form action="{{ url_for('confirmar_voo', codigo=voo.codigo) }}" 
-                              method="post" style="display:inline;">
-                            <button class="btn btn-success btn-sm">
-                                <i class="fa-solid fa-check"></i>
-                            </button>
-                        </form>
+                    <!-- CONFIRMAR VOO -->
+                    <form action="{{ url_for('confirmar_voo', codigo=voo.codigo) }}" 
+                        method="post" style="display:inline;">
+                        <button class="btn btn-outline-success btn-sm rounded-pill px-3">
+                            <i class="fa-solid fa-check"></i>
+                        </button>
+                    </form>
 
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
     </div>
 
     {% else %}
