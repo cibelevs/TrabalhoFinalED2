@@ -148,30 +148,55 @@
         <thead>
           <tr>
             <th>Código</th>
+            <th>Data</th>
+            <th>Horário</th>
             <th>Origem</th>
             <th>Destino</th>
+            <th>Assentos</th>
             <th>Preço (R$)</th>
             <th>Ações</th>
           </tr>
         </thead>
+
         <tbody>
           {% for v in voos %}
           <tr>
             <td>{{ v.codigo }}</td>
+            <td>{{ v.data }}</td>
+            <td>{{ v.horario }}</td>
             <td>{{ v.origem }}</td>
             <td>{{ v.destino }}</td>
+            <td>{{ v.assentos_totais }}</td>
             <td>{{ "%.2f"|format(v.preco) }}</td>
             <td class="action-buttons">
-              <button class="btn btn-warning btn-sm btn-edit" data-codigo="{{ v.codigo }}">
+              <button class="btn btn-warning btn-sm btn-edit"
+                      type="button"
+                      data-bs-toggle="modal"
+                      data-bs-target="#editModal"
+                      data-codigo="{{ v.codigo }}"
+                      data-data="{{ v.data }}"
+                      data-horario="{{ v.horario }}"
+                      data-origem="{{ v.origem }}"
+                      data-destino="{{ v.destino }}"
+                      data-assentos="{{ v.assentos_totais }}"
+                      data-preco="{{ v.preco|float }}">
                 <i class="fa-solid fa-pen-to-square"></i> Editar
               </button>
-              <button class="btn btn-danger btn-sm btn-remove" data-codigo="{{ v.codigo }}" data-origem="{{ v.origem }}" data-destino="{{ v.destino }}">
+
+              <button class="btn btn-danger btn-sm btn-remove"
+                      data-codigo="{{ v.codigo }}"
+                      data-origem="{{ v.origem }}"
+                      data-destino="{{ v.destino }}">
                 <i class="fa-solid fa-trash"></i> Remover
               </button>
             </td>
-          </tr>
+
+        </tr>
+
           {% endfor %}
         </tbody>
+
+        
       </table>
     </div>
     {% else %}
@@ -181,34 +206,61 @@
   </div>
 
   <!-- Modal de edição -->
-  <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <form method="post" action="{{ url_for('salvar_edicao') }}">
-          <div class="modal-header bg-warning text-white">
-            <h5 class="modal-title"><i class="fa-solid fa-pen-to-square me-2"></i> Editar Voo</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
-          </div>
-          <div class="modal-body text-center">
-            <input type="hidden" name="codigo" id="editCodigo">
-            <div class="mb-3">
-              <input type="text" name="origem" id="editOrigem" class="form-control" placeholder="Origem" required>
+  <!-- Modal de edição -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="{{ url_for('salvar_edicao') }}">
+        <div class="modal-header bg-warning text-white">
+          <h5 class="modal-title"><i class="fa-solid fa-pen-to-square me-2"></i> Editar Voo</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+
+        <div class="modal-body">
+          <input type="hidden" name="codigo" id="editCodigo">
+
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label small">Data</label>
+              <input type="date" name="data" id="editData" class="form-control" required>
             </div>
-            <div class="mb-3">
-              <input type="text" name="destino" id="editDestino" class="form-control" placeholder="Destino" required>
+
+            <div class="col-md-4">
+              <label class="form-label small">Horário</label>
+              <input type="time" name="horario" id="editHorario" class="form-control" required>
             </div>
-            <div class="mb-3">
-              <input type="number" name="preco" id="editPreco" class="form-control" step="0.01" placeholder="Preço (R$)" required>
+
+            <div class="col-md-4">
+              <label class="form-label small">Assentos</label>
+              <input type="number" name="assentos_totais" id="editAssentos" class="form-control" min="1" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label small">Origem</label>
+              <input type="text" name="origem" id="editOrigem" class="form-control" required>
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label small">Destino</label>
+              <input type="text" name="destino" id="editDestino" class="form-control" required>
+            </div>
+
+            <div class="col-md-4">
+              <label class="form-label small">Preço (R$)</label>
+              <input type="number" name="preco" id="editPreco" class="form-control" step="0.01" min="0" required>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-            <button type="submit" class="btn btn-warning">Salvar Alterações</button>
-          </div>
-        </form>
-      </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-warning">Salvar Alterações</button>
+        </div>
+      </form>
     </div>
   </div>
+</div>
+
 
   <!-- Modal de confirmação remoção -->
   <div class="modal fade" id="removeModal" tabindex="-1" aria-hidden="true">
@@ -231,36 +283,61 @@
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    const editModal = new bootstrap.Modal(document.getElementById('editModal'));
-    const removeModal = new bootstrap.Modal(document.getElementById('removeModal'));
+ <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    // Botões de edição
-    document.querySelectorAll('.btn-edit').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tr = btn.closest('tr');
-        document.getElementById('editCodigo').value = btn.dataset.codigo;
-        document.getElementById('editOrigem').value = tr.children[1].innerText;
-        document.getElementById('editDestino').value = tr.children[2].innerText;
-        document.getElementById('editPreco').value = tr.children[3].innerText;
+    <script>
+        const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+        const removeModal = new bootstrap.Modal(document.getElementById('removeModal'));
+
+        // --- BOTÃO EDITAR ---
+        document.querySelectorAll('.btn-edit').forEach(btn => {
+          btn.addEventListener('click', () => {
+
+            document.getElementById('editCodigo').value = btn.dataset.codigo;
+            document.getElementById('editData').value = btn.dataset.data;
+            document.getElementById('editHorario').value = btn.dataset.horario;
+            document.getElementById('editOrigem').value = btn.dataset.origem;
+            document.getElementById('editDestino').value = btn.dataset.destino;
+            document.getElementById('editAssentos').value = btn.dataset.assentos_totais;
+            document.getElementById('editPreco').value = btn.dataset.preco;
+
+            editModal.show();
+          });
+        });
+
+        // --- BOTÃO REMOVER ---
+        document.querySelectorAll('.btn-remove').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.getElementById('removeOrigem').value = btn.dataset.origem;
+            document.getElementById('removeDestino').value = btn.dataset.destino;
+
+            document.getElementById('removeMessage').innerHTML = `
+              <p class="mb-2">Tem certeza que deseja remover o voo abaixo?</p>
+              <p><strong>Origem:</strong> ${btn.dataset.origem}</p>
+              <p><strong>Destino:</strong> ${btn.dataset.destino}</p>
+            `;
+
+            removeModal.show();
+          });
+        });
+
+
+        {% if abrir_modal %}
+ 
+        const editModal = new bootstrap.Modal(document.getElementById('editModal'));
+
+        document.getElementById('editCodigo').value = "{{ voo_atual.codigo }}";
+        document.getElementById('editData').value = "{{ voo_atual.data }}";
+        document.getElementById('editHorario').value = "{{ voo_atual.horario }}";
+        document.getElementById('editOrigem').value = "{{ voo_atual.origem }}";
+        document.getElementById('editDestino').value = "{{ voo_atual.destino }}";
+        document.getElementById('editAssentos').value = "{{ voo_atual.assentos_totais }}";
+        document.getElementById('editPreco').value = "{{ voo_atual.preco }}";
+
         editModal.show();
-      });
-    });
+    {% endif %}
 
-    // Botões de remoção
-    document.querySelectorAll('.btn-remove').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.getElementById('removeOrigem').value = btn.dataset.origem;
-        document.getElementById('removeDestino').value = btn.dataset.destino;
-        document.getElementById('removeMessage').innerHTML = `
-          <p class="mb-2">Tem certeza que deseja remover o voo abaixo?</p>
-          <p><strong>Origem:</strong> ${btn.dataset.origem}</p>
-          <p><strong>Destino:</strong> ${btn.dataset.destino}</p>
-        `;
-        removeModal.show();
-      });
-    });
-  </script>
+    </script>
+    
 </body>
 </html>

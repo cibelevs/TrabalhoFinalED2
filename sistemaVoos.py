@@ -10,12 +10,31 @@ app.secret_key = "sua_chave_secreta_aqui"  # pode ser qualquer string
 def carregar_voos():
     try:
         caminho = os.path.join("arquivos", "listaVoos.text")
+
+        if not os.path.exists(caminho):
+            return []
+
         with open(caminho, "r", encoding="utf-8") as f:
             conteudo = f.read().strip()
+
             if conteudo.startswith("Voos ="):
                 conteudo = conteudo.split("=", 1)[1].strip()
+
             voos = ast.literal_eval(conteudo)
+
+            # 🔥 Normalizar chaves antigas
+            for v in voos:
+
+                # Caso tenha "assentos" → vira assentos_totais
+                if "assentos" in v:
+                    v["assentos_totais"] = v.pop("assentos")
+
+                # Se existir assentos_disponiveis, senão iguala ao total
+                if "assentos_disponiveis" not in v:
+                    v["assentos_disponiveis"] = v.get("assentos_totais", 0)
+
             return voos if isinstance(voos, list) else []
+
     except Exception as e:
         print(f"Erro ao carregar voos: {e}")
         return []
@@ -256,27 +275,47 @@ def voos():
 
 
 # --- Adicionar voo ---
+
 @app.route('/adicionar_voo', methods=['POST'])
 def adicionar_voo():
     codigo = request.form.get('codigo')
     origem = request.form.get('origem')
     destino = request.form.get('destino')
     preco_str = request.form.get('preco')
+    data = request.form.get('data')
+    horario = request.form.get('horario')
+    assentos_totais_str = request.form.get('assentos_totais')
 
     try:
         preco = float(preco_str)
-    except (TypeError, ValueError):
-        return render_template('pag_adm.html', error="Preço inválido.")
+        assentos_totais = int(assentos_totais_str)
+    except:
+        flash("Preço ou assentos inválidos.", "erro")
+        return redirect(url_for('painel_admin'))
 
     voos = carregar_voos()
 
-    # Verifica se código já existe
+    # Impedir duplicação
     if any(voo["codigo"] == codigo for voo in voos):
-        return render_template('pag_adm.html', error=f"O código '{codigo}' já está em uso.", voos=voos)
+        flash(f"O código '{codigo}' já está em uso.", "erro")
+        return redirect(url_for('painel_admin'))
 
-    voos.append({"codigo": codigo, "origem": origem, "destino": destino, "preco": preco})
+    # Adicionar novo voo
+    voos.append({
+        "codigo": codigo,
+        "origem": origem,
+        "destino": destino,
+        "preco": preco,
+        "data": data,
+        "horario": horario,
+        "assentos_totais": assentos_totais,
+        "assentos_disponiveis": assentos_totais
+    })
+
     salvar_voos(voos)
-    return render_template('pag_adm.html', success="Voo adicionado com sucesso!", voos=voos)
+
+    flash("Voo adicionado com sucesso!", "sucesso")
+    return redirect(url_for('painel_admin'))
 
 
 # usuario seleciona voo
@@ -294,17 +333,43 @@ def selecionar_voo(codigo):
     return redirect(url_for("adicionar_voos_usuario"))
 
 # usuario adiciona voos
-@app.route("/adicionar_voos_usuario")
-def adicionar_voos_usuario():
+def adicionar_voo_usuario(codigo_voo):
+    usuario = session.get("usuario_logado")
+    if not usuario:
+        return False
 
-    voo = session.get("codigo_voo_selecionado")
+    todos = carregar_voos()
+    voo = next((v for v in todos if v["codigo"] == codigo_voo), None)
 
-    passageiros = session["passageiros_voo"].get(voo, [])
+    if not voo:
+        return False
 
-    return render_template(
-        "adicionar_voos_usuario.html",
-        passageiros_existentes=passageiros
-    )
+    meus_voos = session.get("meus_voos", [])
+
+    # Já adicionado?
+    for v in meus_voos:
+        if v.get("codigo") == voo["codigo"] and v.get("usuario") == usuario:
+            return True
+
+    novo_voo = {
+        "codigo": voo["codigo"],
+        "origem": voo["origem"],
+        "destino": voo["destino"],
+        "data": voo["data"],
+        "horario": voo["horario"],
+        "preco": voo["preco"],
+        "assentos_totais": voo["assentos_totais"],
+        "assentos_disponiveis": voo["assentos_disponiveis"],
+        "usuario": usuario,
+        "confirmado": False,
+        "passageiros": []
+    }
+
+    meus_voos.append(novo_voo)
+    session["meus_voos"] = meus_voos
+    session.modified = True
+    return True
+
 
 
 @app.route("/voos_confirmados")
@@ -352,9 +417,7 @@ def confirmar_passageiros():
 @app.route("/logout")
 def logout():
     session.clear()
-    flash("Você saiu da sua conta.", "success")
-    return redirect(url_for("login_usuario"))
-
+    return redirect(url_for("index"))   # Volta para o menu
 
 
 
@@ -437,23 +500,45 @@ def salvar_edicao():
     origem = request.form.get('origem')
     destino = request.form.get('destino')
     preco_str = request.form.get('preco')
+    data = request.form.get('data')
+    horario = request.form.get('horario')
+    assentos_totais_str = request.form.get('assentos_totais')
 
     try:
         preco = float(preco_str)
-    except (TypeError, ValueError):
+        assentos_totais = int(assentos_totais_str)
+    except:
         voos = carregar_voos()
-        return render_template('pag_adm.html', error="Preço inválido.", voos=voos)
+        return render_template('consulta_voos.html', error="Preço ou assentos inválidos.", voos=voos)
 
     voos = carregar_voos()
+
+    voo_atual = None
+
     for voo in voos:
         if voo["codigo"] == codigo:
             voo["origem"] = origem
             voo["destino"] = destino
             voo["preco"] = preco
+            voo["data"] = data
+            voo["horario"] = horario
+
+            diferenca = assentos_totais - voo.get("assentos_totais", 0)
+            voo["assentos_totais"] = assentos_totais
+            voo["assentos_disponiveis"] = max(0, voo.get("assentos_disponiveis", 0) + diferenca)
+
+            voo_atual = voo
             break
 
     salvar_voos(voos)
-    return redirect(url_for('painel_admin'))
+
+    return render_template(
+        'voos.html',
+        voos=voos,
+        abrir_modal=True,
+        voo_atual=voo_atual
+    )
+
 
 
 @app.route("/", methods=["GET"])

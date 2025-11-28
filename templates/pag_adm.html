@@ -13,19 +13,20 @@
             --laranja: #ff7b00;
             --laranja-escuro: #e56c00;
             --branco: #ffffff;
-            --cinza-claro: #f7f7f7;
-            --cinza-texto: #5a5a5a;
+            --cinza-claro: #f5f5f5;
+            --cinza-texto: #4a4a4a;
+            --cinza-medio: #dedede;
         }
 
         body {
-            background-color: var(--branco);
-            color: var(--cinza-texto);
             font-family: "Segoe UI", sans-serif;
+            background-color: var(--cinza-claro);
+            color: var(--cinza-texto);
         }
 
         .navbar {
             background-color: var(--laranja);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .navbar-brand, .nav-link {
@@ -35,27 +36,50 @@
 
         .container-main {
             margin-top: 110px;
-            max-width: 1000px;
+            max-width: 1100px;
+        }
+
+        h2 {
+            font-weight: 800;
+            color: var(--laranja-escuro);
+        }
+
+        /* Cards do dashboard */
+        .dashboard-card {
+            background: white;
+            border-radius: 16px;
+            padding: 22px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: .3s;
+        }
+
+        .dashboard-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+        }
+
+        .dashboard-icon {
+            font-size: 32px;
+            color: var(--laranja-escuro);
         }
 
         .card {
-            background-color: var(--cinza-claro);
+            border-radius: 14px;
             border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.06);
         }
 
         .card-header {
             background-color: var(--laranja);
-            color: var(--branco);
-            font-weight: 600;
-            border-radius: 12px 12px 0 0;
+            font-weight: bold;
+            color: white;
+            border-radius: 14px 14px 0 0;
         }
 
         .btn-laranja {
             background-color: var(--laranja);
+            color: white;
             border: none;
-            color: var(--branco);
             font-weight: 600;
         }
 
@@ -64,143 +88,209 @@
         }
 
         footer {
-            margin-top: 60px;
-            padding: 20px;
-            background-color: var(--cinza-claro);
+            margin-top: 80px;
+            padding: 28px;
+            background-color: var(--branco);
+            box-shadow: 0 -3px 8px rgba(0,0,0,0.05);
             text-align: center;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
         }
     </style>
 </head>
+
 <body>
-    <nav class="navbar navbar-expand-lg fixed-top">
-        <div class="container">
-            <a class="navbar-brand" href="/">✈ Sistema de Controle de Voos</a>
-            <div class="collapse navbar-collapse justify-content-end">
-                <ul class="navbar-nav">
-                    <li class="nav-item"><a class="nav-link" href="/"><i class="fa-solid fa-right-from-bracket me-1"></i> Sair</a></li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('voos_usuario') }}">
-                            <i class="fa-solid fa-plane-departure me-1"></i> Consulta e Edição de Voos
-                        </a>
-                    </li>
-                </ul>
-            </div>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="/">✈ Sistema de Controle de Voos</a>
+
+        <div class="collapse navbar-collapse justify-content-end">
+            <ul class="navbar-nav">
+
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('voos_usuario') }}">
+                        <i class="fa-solid fa-plane-departure me-1"></i> Consultar e Editar Voos
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="/">
+                        <i class="fa-solid fa-right-from-bracket me-1"></i> Sair
+                    </a>
+                </li>
+
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
 
-    <div class="container container-main">
-        <h2 class="text-center mb-4" style="color: var(--laranja-escuro); font-weight: 700;">Painel do Administrador</h2>
+<div class="container container-main">
 
-        <!-- Mensagem elegante sobre códigos -->
-        <div class="shadow-sm text-center mb-5 p-3 rounded"
-        style="background-color: #fff3e0; border-left: 6px solid var(--laranja); font-size: 1.05rem;">
+    <!-- TÍTULO -->
+    <h2 class="text-center mb-4">Painel do Administrador</h2>
+
+    <!-- INFO SOBRE CÓDIGOS -->
+    <div class="shadow-sm text-center mb-5 p-3 rounded"
+         style="background-color: #fff3e0; border-left: 6px solid var(--laranja); font-size: 1.05rem;">
+
         <i class="fa-solid fa-circle-info me-2" style="color: var(--laranja-escuro);"></i>
-        <strong>OBS:</strong> Voos <strong>Nacionais</strong> têm código iniciado com <strong>ED</strong>, 
-        e voos <strong>Internacionais</strong> têm código iniciado com <strong>IN</strong>.
+        <strong>OBS:</strong> Voos <strong>Nacionais</strong> começam com <strong>ED</strong> e 
+        voos <strong>Internacionais</strong> começam com <strong>IN</strong>.
+    </div>
+
+    <!-- FLASH MESSAGES -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div>
+        {% for category, msg in messages %}
+          <div class="alert alert-{{ 'danger' if category == 'erro' else 'success' }} alert-dismissible fade show">
+            {{ msg }}
+            <button class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- DASHBOARD CARDS -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-3">
+            <div class="dashboard-card text-center">
+                <i class="fa-solid fa-plane dashboard-icon mb-2"></i>
+                <h4 class="fw-bold">{{ voos|length }}</h4>
+                <p class="text-muted m-0">Voos cadastrados</p>
+            </div>
         </div>
 
-        <!-- Mensagens de sucesso/erro -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="mb-4">
-              {% for category, msg in messages %}
-                <div class="alert alert-{{ 'danger' if category == 'erro' else 'success' }} alert-dismissible fade show" role="alert">
-                    {{ msg }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+        <div class="col-md-3">
+            <div class="dashboard-card text-center">
+                <i class="fa-solid fa-users dashboard-icon mb-2"></i>
+                <h4 class="fw-bold">
+                    {{ voos|sum(attribute='assentos_totais') }}
+                </h4>
+                <p class="text-muted m-0">Assentos totais</p>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="dashboard-card text-center">
+                <i class="fa-solid fa-money-bill dashboard-icon mb-2"></i>
+                <h4 class="fw-bold">
+                    R$ {{ "%.2f"|format((voos|sum(attribute='preco')) / (voos|length if voos|length > 0 else 1)) }}
+                </h4>
+                <p class="text-muted m-0">Preço médio</p>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="dashboard-card text-center">
+                <i class="fa-solid fa-clock dashboard-icon mb-2"></i>
+                <h4 class="fw-bold">
+                    {% if voos %}
+                        {{ voos[-1].data }} às {{ voos[-1].horario }}
+                    {% else %}
+                        —
+                    {% endif %}
+                </h4>
+                <p class="text-muted m-0">Último voo criado</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORMULÁRIO DE ADIÇÃO DE VOOS -->
+    <div class="card mb-4">
+        <div class="card-header"><i class="fa-solid fa-plus me-2"></i> Adicionar Novo Voo</div>
+
+        <div class="card-body">
+            <form action="/adicionar_voo" method="post" class="row g-3">
+
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="codigo" placeholder="Código" required>
                 </div>
-              {% endfor %}
-            </div>
-          {% endif %}
-        {% endwith %}
-        {% if error %}
-          <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">{{ error }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
-          </div>
-        {% endif %}
-        {% if success %}
-          <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">{{ success }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
-          </div>
-        {% endif %}
 
-        <!-- Formulário de Adição -->
-        <div class="card mb-4">
-            <div class="card-header"><i class="fa-solid fa-plus me-2"></i> Adicionar Novo Voo</div>
-            <div class="card-body">
-                <form action="/adicionar_voo" method="post" class="row g-3">
-                    <div class="col-md-3"><input type="text" class="form-control" name="codigo" placeholder="Código" required></div>
-                    <div class="col-md-3"><input type="text" class="form-control" name="origem" placeholder="Origem" required></div>
-                    <div class="col-md-3"><input type="text" class="form-control" name="destino" placeholder="Destino" required></div>
-                    <div class="col-md-3"><input type="number" step="0.01" class="form-control" name="preco" placeholder="Preço (R$)" required></div>
-                    <div class="text-end mt-3"><button class="btn btn-laranja px-4"><i class="fa-solid fa-circle-plus me-1"></i> Adicionar</button></div>
-                </form>
-            </div>
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="origem" placeholder="Origem" required>
+                </div>
+
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="destino" placeholder="Destino" required>
+                </div>
+
+                <div class="col-md-3">
+                    <input type="number" step="0.01" class="form-control" name="preco" placeholder="Preço (R$)" required>
+                </div>
+
+                <div class="col-md-4">
+                    <input type="date" class="form-control" name="data" required>
+                </div>
+
+                <div class="col-md-4">
+                    <input type="time" class="form-control" name="horario" required>
+                </div>
+
+                <div class="col-md-4">
+                    <input type="number" class="form-control" name="assentos_totais" min="1" placeholder="Assentos" required>
+                </div>
+
+                <div class="text-end mt-3">
+                    <button class="btn btn-laranja px-4"><i class="fa-solid fa-circle-plus me-1"></i> Adicionar</button>
+                </div>
+
+            </form>
         </div>
+    </div>
 
-        <!-- Últimos voos cadastrados -->
-        <div class="card mb-4">
-        <div class="card-header"><i class="fa-solid fa-plane me-2"></i> Últimos Voos Cadastrados</div>
+    <!-- TABELA COMPLETA DE VOOS -->
+    <div class="card">
+        <div class="card-header"><i class="fa-solid fa-table me-2"></i> Voos Registrados</div>
+
         <div class="card-body">
             {% if voos %}
             <div class="table-responsive">
-            <table class="table table-striped table-hover text-center align-middle">
-                <thead class="table-warning">
-                <tr>
-                    <th>Código</th>
-                    <th>Origem</th>
-                    <th>Destino</th>
-                    <th>Preço (R$)</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for v in voos[-5:] %}
-                <tr>
-                    <td>{{ v.codigo }}</td>
-                    <td>{{ v.origem }}</td>
-                    <td>{{ v.destino }}</td>
-                    <td>{{ "%.2f"|format(v.preco) }}</td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+                <table class="table table-striped table-hover text-center align-middle">
+
+                    <thead class="table-warning">
+                        <tr>
+                            <th>Código</th>
+                            <th>Origem</th>
+                            <th>Destino</th>
+                            <th>Data</th>
+                            <th>Horário</th>
+                            <th>Assentos</th>
+                            <th>Preço (R$)</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        {% for v in voos %}
+                        <tr>
+                            <td>{{ v.codigo }}</td>
+                            <td>{{ v.origem }}</td>
+                            <td>{{ v.destino }}</td>
+                            <td>{{ v.data }}</td>
+                            <td>{{ v.horario }}</td>
+                            <td>{{ v.assentos_totais }}</td>
+                            <td>{{ "%.2f"|format(v.preco) }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
             </div>
             {% else %}
-            <p class="text-muted text-center mb-0">Nenhum voo cadastrado ainda.</p>
+            <p class="text-muted text-center m-0">Nenhum voo cadastrado ainda.</p>
             {% endif %}
         </div>
-        </div>
-
-        <footer>
-            <p>Trabalho Final - Estrutura de Dados II • Desenvolvido por <strong>Cibele Vale Sacramento</strong> e <strong>Alberman dos Santos</strong></p>
-        </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        const btnRemover = document.getElementById('btnRemover');
-        const modalMensagem = document.getElementById('modalMensagem');
-        const confirmarRemocao = document.getElementById('confirmarRemocao');
-        const formRemover = document.getElementById('formRemover');
-        const confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    <footer>
+        <p>Trabalho Final • Estrutura de Dados II • Desenvolvido por <strong>Cibele Vale Sacramento</strong> e <strong>Alberman dos Santos</strong></p>
+    </footer>
 
-        btnRemover.addEventListener('click', () => {
-            const origem = formRemover.elements['origem'].value;
-            const destino = formRemover.elements['destino'].value;
+</div>
 
-            modalMensagem.innerHTML = `
-                <p class="mb-2">Tem certeza que deseja remover o voo abaixo?</p>
-                <div class="bg-light p-3 rounded border">
-                    <p class="mb-1"><strong>Origem:</strong> ${origem}</p>
-                    <p class="mb-0"><strong>Destino:</strong> ${destino}</p>
-                </div>
-            `;
-            confirmModal.show();
-        });
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-        confirmarRemocao.addEventListener('click', () => {
-            formRemover.submit();
-        });
-    </script>
 </body>
 </html>
