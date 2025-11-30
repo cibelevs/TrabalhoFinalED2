@@ -232,6 +232,16 @@
 
                 <td class="text-center">
 
+
+                     <form action="{{ url_for('confirmar_voo', codigo=voo.codigo) }}" method="post" style="display:inline;">
+                            <input type="text" name="cpf_usuario" placeholder="Digite seu CPF"
+                                class="form-control form-control-sm mb-2" required>
+
+                            <button class="btn btn-outline-success btn-sm rounded-pill px-3" type="submit">
+                                <i class="fa-solid fa-check"></i>
+                            </button>
+                      </form>
+
                     <!-- REMOVER -->
                     <form action="{{ url_for('remover_do_carrinho', codigo=voo.codigo) }}"
                         method="post" style="display:inline;">
@@ -248,13 +258,7 @@
                         </button>
                     </form>
 
-                    <!-- CONFIRMAR VOO -->
-                    <form action="{{ url_for('confirmar_voo', codigo=voo.codigo) }}" 
-                        method="post" style="display:inline;">
-                        <button class="btn btn-outline-success btn-sm rounded-pill px-3">
-                            <i class="fa-solid fa-check"></i>
-                        </button>
-                    </form>
+                    
 
                 </td>
             </tr>
