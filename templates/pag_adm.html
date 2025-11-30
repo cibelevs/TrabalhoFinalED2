@@ -113,6 +113,17 @@
                         <i class="fa-solid fa-plane-departure me-1"></i> Consultar e Editar Voos
                     </a>
                 </li>
+                            <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('buscar_passageiro_cpf') }}">
+                        <i class="fa-solid fa-id-card me-1"></i> Buscar Passageiro
+                    </a>
+                </li>
+
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('listar_passageiros') }}">
+                        <i class="fa-solid fa-list me-1"></i> Listar Passageiros
+                    </a>
+                </li>
 
                 <li class="nav-item">
                     <a class="nav-link" href="/">
@@ -196,6 +207,8 @@
                 <p class="text-muted m-0">Último voo criado</p>
             </div>
         </div>
+
+           
     </div>
 
     <!-- FORMULÁRIO DE ADIÇÃO DE VOOS -->

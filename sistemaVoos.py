@@ -1,10 +1,15 @@
 import os
+import csv
 import ast
 from flask import Flask, json, render_template, request, redirect, session, url_for, flash, get_flashed_messages
+from passageiros_btree import PassageirosBTree 
+import pandas as pd
 
 app = Flask(__name__)
 app.secret_key = "sua_chave_secreta_aqui"  # pode ser qualquer string
 
+passageiros_db = PassageirosBTree(ordem=3)
+passageiros_db.carregar_csv("arquivos/passageiros.csv")
 
 # --- Função para carregar voos do arquivo dentro da pasta 'arquivos' ---
 def carregar_voos():
@@ -165,6 +170,13 @@ def painel_usuario():
     ]
     pendentes_usuario = [
         v for v in voos_pendentes
+    meus_voos = [
+        v for v in session.get("meus_voos", [])
+        if v.get("usuario") == usuario and not v.get("confirmado", False)
+    ]
+
+    voos_pendentes = [
+        v for v in session.get("voos_pendentes", [])
         if v.get("usuario") == usuario
     ]
 
@@ -173,7 +185,11 @@ def painel_usuario():
         meus_voos=meus_voos_usuario,
         voos_pendentes=pendentes_usuario,
         passageiros_sessao=passageiros_sessao
+        voos=None,
+        meus_voos=meus_voos,
+        voos_pendentes=voos_pendentes
     )
+
 
 
 
@@ -261,13 +277,19 @@ def remover_voo_usuario(codigo_voo):
 def buscar_voos_usuario():
     origem = request.args.get("origem", "").strip().lower()
     destino = request.args.get("destino", "").strip().lower()
+
     todos = carregar_voos()
-    voos = [
+    voos_filtrados = [
         v for v in todos
         if origem in v["origem"].lower() and destino in v["destino"].lower()
     ]
-    return render_template("painelusuario.html", voos=voos, meus_voos=carregar_meus_voos())
 
+    return render_template(
+        "painelusuario.html",
+        voos=voos_filtrados,
+        meus_voos=session.get("meus_voos", []),
+        voos_pendentes=session.get("voos_pendentes", [])
+    )
 
 @app.post("/adicionar_ao_carrinho/<codigo>")
 def adicionar_ao_carrinho(codigo):
@@ -408,8 +430,8 @@ def adicionar_voo_usuario(codigo_voo):
 
 @app.route("/voos_confirmados")
 def voos_confirmados():
-    usuario = session.get("usuario_logado")
 
+    usuario = session.get("usuario_logado")
     if not usuario:
         return redirect(url_for("login_usuario"))
 
@@ -466,6 +488,25 @@ def confirmar_passageiros():
 def remover_passageiro():
     codigo = session.get("codigo_voo_selecionado")
     idx = int(request.form.get("id", -1))
+    for i in range(len(nomes)):
+        passageiro = {
+            "nome": nomes[i],
+            "cpf": cpfs[i],
+            "tipo": tipos[i]
+        }
+        novos.append(passageiro)
+
+        # 👉 ADICIONAR NA ÁRVORE B
+        passageiros_db.inserir_passageiro(
+            cpf=cpfs[i],
+            voo=voo,
+            origem="",
+            destino="",
+            horario=""
+        )
+    # adiciona aos existentes
+    session["passageiros_voo"][voo].extend(novos)
+    session.modified = True
 
     if codigo not in session.get("passageiros_voo", {}):
         flash("Erro ao remover passageiro.", "danger")
@@ -488,50 +529,98 @@ def logout():
 
 @app.route("/confirmar_voo/<codigo>", methods=["POST"])
 def confirmar_voo(codigo):
-    codigo = str(codigo)
     usuario = session.get("usuario_logado")
     if not usuario:
-        flash("Faça login primeiro.", "erro")
+        flash("Faça login para continuar.", "erro")
         return redirect(url_for("login_usuario"))
 
-    # Garantir listas
-    meus_voos = session.get("meus_voos", [])
-    voos_pendentes = session.get("voos_pendentes", [])
-
-    # Procurar e remover o voo em meus_voos (apenas do usuário)
-    voo_encontrado = None
-    novos_meus_voos = []
-    for v in meus_voos:
-        if str(v.get("codigo")) == codigo and v.get("usuario") == usuario:
-            voo_encontrado = v
-            # não adiciona à lista nova = efetivamente remove
-        else:
-            novos_meus_voos.append(v)
-
-    session["meus_voos"] = novos_meus_voos
-
-    if not voo_encontrado:
-        flash("Voo não encontrado entre seus voos não confirmados.", "danger")
+    # 1. CPF do responsável pelo voo
+    cpf_usuario = request.form.get("cpf_usuario", "").strip()
+    if len(cpf_usuario) != 11 or not cpf_usuario.isdigit():
+        flash("CPF inválido!", "erro")
         return redirect(url_for("painel_usuario"))
 
-    # Atualizar o estado / certificações do objeto antes de mover
-    voo_encontrado["confirmado"] = True
-    voo_encontrado.setdefault("passageiros", voo_encontrado.get("passageiros", []))
-    voo_encontrado["usuario"] = usuario  # garante consistência
+    # 2. Carregar todos os voos cadastrados
+    todos_voos = carregar_voos()
 
-    # Evitar duplicados em voos_pendentes (mesmo codigo + usuario)
-    existe = any(
-        vp.get("codigo") == voo_encontrado.get("codigo") and vp.get("usuario") == usuario
-        for vp in voos_pendentes
+    voo = next((v for v in todos_voos if v["codigo"] == codigo), None)
+    if not voo:
+        flash("Voo não encontrado!", "erro")
+        return redirect(url_for("painel_usuario"))
+
+    # 3. Pegar passageiros registrados na sessão
+    passageiros_registrados = session.get("passageiros_voo", {}).get(codigo, [])
+
+    # 4. Registrar passageiro responsável + outros passageiros
+    registros_para_csv = []
+
+    # passageiro principal
+    passageiros_db.inserir_passageiro(
+        cpf=cpf_usuario,
+        voo=voo["codigo"],
+        origem=voo["origem"],
+        destino=voo["destino"],
+        horario=voo["horario"]
     )
-    if not existe:
-        voos_pendentes.append(voo_encontrado)
-        session["voos_pendentes"] = voos_pendentes
+
+    registros_para_csv.append([cpf_usuario, voo["codigo"], voo["origem"], voo["destino"], voo["horario"]])
+
+    # outros passageiros
+    for p in passageiros_registrados:
+        passageiros_db.inserir_passageiro(
+            cpf=p["cpf"],
+            voo=voo["codigo"],
+            origem=voo["origem"],
+            destino=voo["destino"],
+            horario=voo["horario"]
+        )
+        registros_para_csv.append([p["cpf"], voo["codigo"], voo["origem"], voo["destino"], voo["horario"]])
+
+    salvar_passageiros_csv(registros_para_csv)
+
+    # 5. Remover da lista "meus_voos"
+    meus_voos = session.get("meus_voos", [])
+    meus_voos = [v for v in meus_voos if v["codigo"] != codigo]
+    session["meus_voos"] = meus_voos
+
+    # 6. Mover para voos pendentes
+    voos_pendentes = session.get("voos_pendentes", [])
+    voo_confirmado = voo.copy()
+    voo_confirmado["usuario"] = usuario
+    voo_confirmado["confirmado"] = True
+    voos_pendentes.append(voo_confirmado)
+    session["voos_pendentes"] = voos_pendentes
+
+    # limpar passageiros da sessão
+    if "passageiros_voo" in session:
+        session["passageiros_voo"].pop(codigo, None)
+
+
+  
+    
 
     session.modified = True
-    flash("Voo disponível na aba Voos Pendentes! (confirmado)", "success")
+    flash("Voo confirmado e passageiros registrados!", "sucesso")
+
     return redirect(url_for("painel_usuario"))
 
+
+
+def salvar_passageiros_csv(linhas):
+    caminho = os.path.join("arquivos", "passageiros.csv")
+
+    arquivo_existe = os.path.exists(caminho)
+
+    with open(caminho, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+
+        # escrever cabeçalho se o arquivo está vazio
+        if not arquivo_existe:
+            writer.writerow(["cpf", "voo", "origem", "destino", "horario"])
+
+        # grava cada passageiro confirmado
+        for linha in linhas:
+            writer.writerow(linha)
 
 
 # --- Remover Voo ---
@@ -622,7 +711,28 @@ def index():
     return render_template("menu.html", origem=origem, destino=destino, voos=voos)
 
 # --- Executa o app ---
+
+
+
+
+# --- ---------------------  ARVORE B  ------------------------------ 
+# ------------------------------------------------------------
+# ------------------------------------------------------------
+# PAINEL DO ADM — LISTAR PASSAGEIROS POR VOO
+
+# --- ROTAS PARA BUSCA / LISTAGEM DE PASSAGEIROS (BTree) ---
+@app.route('/buscar_passageiro_cpf')
+def buscar_passageiro_cpf():
+    cpf = request.args.get('cpf', '').strip()
+    passageiro = passageiros_db.buscar_por_cpf(cpf)
+    # use o template que você realmente criou (buscar_passageiro.html ou buscar_passageiro_manual.html)
+    return render_template('buscar_passageiro.html', passageiro=passageiro, cpf=cpf)
+
+
+@app.route('/listar_passageiros')
+def listar_passageiros():
+    lista = passageiros_db.listar_ordenado()  # retorna [(cpf, passageiro_obj), ...]
+    return render_template('listar_passageiros.html', passageiros=lista)
+
 if __name__ == '__main__':
     app.run(debug=True)
-
-
