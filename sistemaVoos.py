@@ -149,6 +149,12 @@ def painel_admin():
     voos = carregar_voos()
     return render_template('pag_adm.html', voos=voos)
 
+
+def carregar_passageiros():
+    df = pd.read_csv("arquivos/passageiros.csv")
+    df = df.fillna("")  # evita NaN -> Undefined no template
+    return df.to_dict(orient="records")
+
 @app.route("/painel_usuario")
 def painel_usuario():
     usuario = session.get("usuario_logado")
@@ -161,7 +167,7 @@ def painel_usuario():
     voos_pendentes = session.get("voos_pendentes", [])
 
     # passageiros salvos por código na session
-    passageiros_sessao = session.get("passageiros_voo", {})
+    passageiros_sessao = carregar_passageiros() or {}
 
     # filtrar só os do usuário
     meus_voos_usuario = [
@@ -170,10 +176,14 @@ def painel_usuario():
     ]
     pendentes_usuario = [
         v for v in voos_pendentes
+        if v.get("usuario") == usuario and not v.get("confirmado", False)
+    ]
+
     meus_voos = [
         v for v in session.get("meus_voos", [])
         if v.get("usuario") == usuario and not v.get("confirmado", False)
     ]
+
 
     voos_pendentes = [
         v for v in session.get("voos_pendentes", [])
@@ -184,10 +194,8 @@ def painel_usuario():
         "painelusuario.html",
         meus_voos=meus_voos_usuario,
         voos_pendentes=pendentes_usuario,
-        passageiros_sessao=passageiros_sessao
+        passageiros_sessao=passageiros_sessao,
         voos=None,
-        meus_voos=meus_voos,
-        voos_pendentes=voos_pendentes
     )
 
 
@@ -273,8 +281,12 @@ def remover_voo_usuario(codigo_voo):
     session.modified = True
 
 
-@app.route("/buscar_voos_usuario")
+@app.get("/buscar_voos_usuario")
 def buscar_voos_usuario():
+    usuario = session.get("usuario_logado")
+    if not usuario:
+        return redirect(url_for("login_usuario"))
+
     origem = request.args.get("origem", "").strip().lower()
     destino = request.args.get("destino", "").strip().lower()
 
@@ -284,12 +296,26 @@ def buscar_voos_usuario():
         if origem in v["origem"].lower() and destino in v["destino"].lower()
     ]
 
+    # manter consistência com painel_usuario()
+    meus_voos = [
+        v for v in session.get("meus_voos", [])
+        if v.get("usuario") == usuario and not v.get("confirmado", False)
+    ]
+    pendentes = [
+        v for v in session.get("voos_pendentes", [])
+        if v.get("usuario") == usuario and not v.get("confirmado", False)
+    ]
+
+    passageiros_sessao = carregar_passageiros()
+
     return render_template(
         "painelusuario.html",
         voos=voos_filtrados,
-        meus_voos=session.get("meus_voos", []),
-        voos_pendentes=session.get("voos_pendentes", [])
+        meus_voos=meus_voos,
+        voos_pendentes=pendentes,
+        passageiros_sessao=passageiros_sessao
     )
+
 
 @app.post("/adicionar_ao_carrinho/<codigo>")
 def adicionar_ao_carrinho(codigo):
