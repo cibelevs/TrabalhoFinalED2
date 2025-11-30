@@ -155,18 +155,24 @@ def painel_usuario():
     meus_voos = session.get("meus_voos", [])
     voos_pendentes = session.get("voos_pendentes", [])
 
+    # passageiros salvos por código na session
+    passageiros_sessao = session.get("passageiros_voo", {})
+
     # filtrar só os do usuário
     meus_voos_usuario = [
-        v for v in meus_voos if v.get("usuario") == usuario and not v.get("confirmado", False)
+        v for v in meus_voos
+        if v.get("usuario") == usuario and not v.get("confirmado", False)
     ]
     pendentes_usuario = [
-        v for v in voos_pendentes if v.get("usuario") == usuario
+        v for v in voos_pendentes
+        if v.get("usuario") == usuario
     ]
 
     return render_template(
         "painelusuario.html",
         meus_voos=meus_voos_usuario,
-        voos_pendentes=pendentes_usuario
+        voos_pendentes=pendentes_usuario,
+        passageiros_sessao=passageiros_sessao
     )
 
 
@@ -176,6 +182,34 @@ def carregar_meus_voos():
     if "meus_voos" not in session:
         session["meus_voos"] = []
     return session["meus_voos"]
+
+
+
+@app.route("/adicionar_voos_usuario")
+def adicionar_voos_usuario():
+    usuario = session.get("usuario_logado")
+    if not usuario:
+        return redirect(url_for("login_usuario"))
+
+    codigo = session.get("codigo_voo_selecionado")
+
+    # CARREGAR VOOS DO ARQUIVO
+    todos = carregar_voos()
+    voo = next((v for v in todos if v["codigo"] == codigo), None)
+
+    # GARANTIR E BUSCAR PASSAGEIROS DO VOO
+    passageiros_existentes = []
+    if "passageiros_voo" in session and codigo in session["passageiros_voo"]:
+        passageiros_existentes = session["passageiros_voo"][codigo]
+
+    return render_template(
+        "adicionar_voos_usuario.html",
+        voo=voo,
+        passageiros_existentes=passageiros_existentes,
+        codigo=codigo
+    )
+
+
 
 def adicionar_voo_usuario(codigo_voo):
     usuario = session.get("usuario_logado")
@@ -391,27 +425,58 @@ def voos_confirmados():
 # confirma passageiros do usuario
 @app.route("/confirmar_passageiros", methods=["POST"])
 def confirmar_passageiros():
+    usuario = session.get("usuario_logado")
+    codigo = session.get("codigo_voo_selecionado")
 
-    voo = session.get("codigo_voo_selecionado")
+    if not usuario or not codigo:
+        flash("Erro: voo ou usuário não encontrados.", "danger")
+        return redirect(url_for("painel_usuario"))
 
+    # Garante estrutura
+    if "passageiros_voo" not in session:
+        session["passageiros_voo"] = {}
+
+    if codigo not in session["passageiros_voo"]:
+        session["passageiros_voo"][codigo] = []
+
+    passageiros_existentes = session["passageiros_voo"][codigo]
+
+    # CAPTURAR PASSAGEIROS NOVOS
     nomes = request.form.getlist("novo_nome[]")
     cpfs = request.form.getlist("novo_cpf[]")
     tipos = request.form.getlist("novo_tipo[]")
 
-    novos = []
+    # ADICIONAR NA LISTA
+    for nome, cpf, tipo in zip(nomes, cpfs, tipos):
+        if nome.strip() and cpf.strip():
+            passageiros_existentes.append({
+                "nome": nome,
+                "cpf": cpf,
+                "tipo": tipo
+            })
 
-    for i in range(len(nomes)):
-        novos.append({
-            "nome": nomes[i],
-            "cpf": cpfs[i],
-            "tipo": tipos[i]
-        })
-
-    # adiciona aos existentes
-    session["passageiros_voo"][voo].extend(novos)
+    # SALVAR NOVAMENTE NA SESSION
+    session["passageiros_voo"][codigo] = passageiros_existentes
     session.modified = True
 
-    return redirect("/adicionar_voos_usuario")
+    flash("Alterações salvas com sucesso!", "success")
+    return redirect(url_for("adicionar_voos_usuario"))
+
+@app.route("/remover_passageiro", methods=["POST"])
+def remover_passageiro():
+    codigo = session.get("codigo_voo_selecionado")
+    idx = int(request.form.get("id", -1))
+
+    if codigo not in session.get("passageiros_voo", {}):
+        flash("Erro ao remover passageiro.", "danger")
+        return redirect(url_for("adicionar_voos_usuario"))
+
+    if 0 <= idx < len(session["passageiros_voo"][codigo]):
+        session["passageiros_voo"][codigo].pop(idx)
+        session.modified = True
+        flash("Passageiro removido!", "success")
+
+    return redirect(url_for("adicionar_voos_usuario"))
 
 
 @app.route("/logout")
