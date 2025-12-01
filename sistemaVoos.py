@@ -481,7 +481,7 @@ def salvar_voos_confirmados(lista):
         json.dump(lista, f, ensure_ascii=False, indent=4)
 
 
-
+@app.route("/voos_confirmados")
 @app.route("/voos_confirmados")
 def voos_confirmados():
 
@@ -489,17 +489,55 @@ def voos_confirmados():
     if not usuario:
         return redirect(url_for("login_usuario"))
 
-    # ---- CARREGAR ARQUIVO JSON ----
     voos_arquivo = carregar_voos_confirmados()
+    voos_usuario = []
 
-    # ---- FILTRAR SOMENTE OS VOOS DO USUÁRIO ----
-    voos_usuario = [
-        v for v in voos_arquivo
-        if isinstance(v.get("usuario"), dict) and v["usuario"].get("nome") == usuario.get("nome")
-    ]
+    for v in voos_arquivo:
 
+        # Pega só os voos desse usuário
+        if isinstance(v.get("usuario"), dict) and v["usuario"].get("nome") == usuario.get("nome"):
+
+            preco = float(v.get("preco", 0))
+
+            # Criar lista de passageiros corretamente
+            if isinstance(v.get("usuario"), dict):
+                passageiros = [v["usuario"]["nome"]]
+            else:
+                passageiros = []
+
+            v["passageiros_lista"] = passageiros
+            v["total_viagem"] = preco * len(passageiros)
+
+            voos_usuario.append(v)
 
     return render_template("voos_confirmados.html", voos=voos_usuario)
+
+
+@app.route("/remover_voo_confirmado/<codigo>", methods=["POST"])
+def remover_voo_confirmado(codigo):
+
+    usuario = session.get("usuario_logado")
+    if not usuario:
+        return redirect(url_for("login_usuario"))
+
+    # Carregar voos
+    voos = carregar_voos_confirmados()
+
+    # Criar nova lista sem o voo cancelado
+    voos_restante = []
+    for v in voos:
+        if (
+            isinstance(v.get("usuario"), dict)
+            and v["usuario"].get("nome") == usuario.get("nome")
+            and str(v.get("codigo")) == str(codigo)
+        ):
+            continue  # este será removido
+        voos_restante.append(v)
+
+    salvar_voos_confirmados(voos_restante)
+
+    flash("Voo cancelado com sucesso. Taxa de R$ 50,00 aplicada.", "warning")
+    return redirect(url_for("voos_confirmados"))
 
 
 # confirma passageiros do usuario

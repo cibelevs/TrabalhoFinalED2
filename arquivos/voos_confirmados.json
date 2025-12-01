@@ -10,20 +10,5 @@
         "origem": "Fortaleza",
         "preco": 6800.0,
         "usuario": true
-    },
-    {
-        "assentos_disponiveis": 279,
-        "assentos_totais": 280,
-        "codigo": "IN620",
-        "confirmado": true,
-        "data": "2026-03-09",
-        "destino": "Santiago (SCL)",
-        "horario": "19:25",
-        "origem": "Brasília",
-        "preco": 3200.0,
-        "usuario": {
-            "nome": "cibele",
-            "senha": "abc"
-        }
     }
 ]

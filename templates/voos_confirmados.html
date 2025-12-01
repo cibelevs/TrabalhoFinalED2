@@ -10,13 +10,15 @@
 
     <style>
         :root {
-            --laranja: #ff7b00;
-            --laranja-escuro: #e56c00;
+            --laranja:#ff7b00;
+            --laranja-escuro:#e56c00;
+            --cinza:#3f3f3f;
         }
 
         body {
-            background: linear-gradient(135deg, #ffe1c4, #ffb88c);
+            background: linear-gradient(135deg, #ffe0c2, #ffb98d);
             font-family: "Segoe UI", sans-serif;
+            padding-bottom: 60px;
         }
 
         .titulo {
@@ -25,31 +27,62 @@
             font-weight: 800;
             text-align: center;
             font-size: 2.2rem;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.15);
         }
 
         .card-voo {
-            border-radius: 16px;
+            border-radius: 18px;
             background: #ffffff;
-            box-shadow: 0px 6px 18px rgba(0,0,0,0.1);
-            padding: 25px;
-            margin-bottom: 25px;
-            transition: 0.3s;
+            box-shadow: 0px 6px 18px rgba(0,0,0,0.12);
+            padding: 28px;
+            margin-bottom: 30px;
+            transition: 0.25s;
         }
 
         .card-voo:hover {
             transform: translateY(-4px);
-            box-shadow: 0px 8px 25px rgba(0,0,0,0.15);
+            box-shadow: 0px 10px 30px rgba(0,0,0,0.18);
         }
 
         .titulo-card {
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             font-weight: bold;
             color: var(--laranja);
+            margin-bottom: 12px;
         }
 
         .info {
             font-size: 1.1rem;
-            margin: 4px 0;
+            margin: 5px 0;
+            color: var(--cinza);
+        }
+
+        .passageiro-box {
+            background: #fff7ef;
+            padding: 18px;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+
+        .passageiro-box li {
+            margin: 6px 0;
+            font-size: 1.05rem;
+        }
+
+        .valor-total {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--laranja-escuro);
+            margin-top: 10px;
+        }
+
+        .btn-remover {
+            background:#dc3545;
+            color:white;
+            border:none;
+            border-radius:10px;
+            padding: 8px 16px;
+            font-weight:600;
         }
 
         .btn-voltar {
@@ -58,6 +91,7 @@
             font-weight: 600;
             border-radius: 12px;
             padding: 10px 20px;
+            text-decoration:none;
         }
     </style>
 </head>
@@ -70,13 +104,46 @@
         {% if voos %}
             {% for v in voos %}
             <div class="card-voo">
-                <div class="titulo-card">
-                    <i class="fa-solid fa-plane"></i>
-                    Voo {{ v.codigo }}
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="titulo-card">
+                        <i class="fa-solid fa-plane"></i> Voo {{ v.codigo }}
+                    </div>
+
+                    <button 
+                        class="btn-remover"
+                        data-codigo="{{ v.codigo }}"
+                        onclick="abrirModalRemover(this)">
+                        <i class="fa-solid fa-trash"></i> Remover
+                    </button>
                 </div>
-                <p class="info"><strong>Origem :</strong> {{ v.origem }}</p>
+
+                <p class="info"><strong>Origem:</strong> {{ v.origem }}</p>
                 <p class="info"><strong>Destino:</strong> {{ v.destino }}</p>
-                <p class="info"><strong>Preço:</strong> R$ {{ "%.2f"|format(v.preco) }}</p>
+                <p class="info"><strong>Data:</strong> {{ v.data }}</p>
+                <p class="info"><strong>Horário:</strong> {{ v.horario }}</p>
+                <p class="info"><strong>Preço Individual:</strong> R$ {{ "%.2f"|format(v.preco) }}</p>
+
+                <h4 class="mb-3" style="color: var(--laranja-escuro); font-weight: 700;">
+    <i class="fa-solid fa-users"></i> Passageiros
+</h4>
+
+{% if v.passageiros_lista %}
+    <ul class="lista-passageiros">
+        {% for p in v.passageiros_lista %}
+            <li><i class="fa-solid fa-user"></i> {{ p }}</li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p class="text-muted">Nenhum passageiro informado.</p>
+{% endif %}
+
+<p class="valor-total">
+    <i class="fa-solid fa-wallet"></i>
+    Valor Total da Viagem:
+    <strong>R$ {{ "%.2f"|format(v.total_viagem) }}</strong>
+</p>
+
             </div>
             {% endfor %}
         {% else %}
@@ -86,12 +153,59 @@
         {% endif %}
 
         <div class="text-center mt-5 mb-5">
-            <a href="{{ url_for('painel_usuario') }}" class="btn btn-voltar">
+            <a href="{{ url_for('painel_usuario') }}" class="btn-voltar">
                 <i class="fa-solid fa-arrow-left"></i> Voltar ao Painel
             </a>
         </div>
 
     </div>
+
+<!-- MODAL REMOVER COM TAXA -->
+<div class="modal fade" id="modalRemover" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius:15px; border-top:5px solid var(--laranja);">
+
+        <div class="modal-header">
+            <h5 class="modal-title" style="font-weight:700;color:var(--laranja-escuro);">
+                Remover Voo
+            </h5>
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+            <p style="font-size:1.1rem;">
+                Tem certeza que deseja remover este voo?  
+                <br><br>
+                <strong>Será cobrada uma taxa de cancelamento de R$ 50,00.</strong>
+            </p>
+        </div>
+
+        <div class="modal-footer">
+            <form method="post" id="formRemoverVoo">
+                <button class="btn btn-danger px-4">Confirmar</button>
+            </form>
+            <button class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    let modalRemover = null;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        modalRemover = new bootstrap.Modal(document.getElementById("modalRemover"));
+    });
+
+    function abrirModalRemover(btn) {
+        const codigo = btn.dataset.codigo;
+        document.getElementById("formRemoverVoo").action = "/remover_voo_confirmado/" + codigo;
+        modalRemover.show();
+    }
+</script>
 
 </body>
 </html>
