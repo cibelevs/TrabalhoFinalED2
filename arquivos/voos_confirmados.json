@@ -25,5 +25,35 @@
             "nome": "alber",
             "senha": "1234"
         }
+    },
+    {
+        "assentos_disponiveis": 178,
+        "assentos_totais": 180,
+        "codigo": "ED135",
+        "confirmado": true,
+        "data": "2026-01-16",
+        "destino": "São Paulo",
+        "horario": "09:30",
+        "origem": "Manaus",
+        "preco": 350.0,
+        "usuario": {
+            "nome": "alber",
+            "senha": "1234"
+        }
+    },
+    {
+        "assentos_disponiveis": 176,
+        "assentos_totais": 180,
+        "codigo": "ED135",
+        "confirmado": true,
+        "data": "2026-01-16",
+        "destino": "São Paulo",
+        "horario": "09:30",
+        "origem": "Manaus",
+        "preco": 350.0,
+        "usuario": {
+            "nome": "alber",
+            "senha": "1234"
+        }
     }
 ]

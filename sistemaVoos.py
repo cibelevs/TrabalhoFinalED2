@@ -413,23 +413,18 @@ def adicionar_voo_usuario(codigo_voo):
         if v.get("codigo") == voo["codigo"] and v.get("usuario") == usuario:
             return True  # já existe, não duplica
 
-    # Criar voo NÃO confirmado
-    novo_voo = {
-        "codigo": voo["codigo"],
-        "origem": voo["origem"],
-        "destino": voo["destino"],
-        "preco": voo["preco"],
-        "usuario": usuario,
-        "confirmado": False,
-        "passageiros": []
-    }
+    novo_voo = voo.copy()
+
+# Adiciona/Sobrescreve informações específicas do usuário e status
+    novo_voo["usuario"] = usuario # Adiciona a informação de quem adicionou
+    novo_voo["confirmado"] = False # Marca como pendente
+    novo_voo["passageiros"] = [] # Inicializa lista de passageiros (opcional)
 
     meus_voos.append(novo_voo)
 
     session["meus_voos"] = meus_voos
     session.modified = True
     return True
-
 
 @app.route("/remover_passageiro/<codigo>", methods=["POST"])
 def remover_passageiro(codigo):
