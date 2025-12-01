@@ -1,4 +1,4 @@
-#!/home/cibele/Documentos/TrabalhoFinalED2/venv/bin/python3
+#!/home/cibelevs/Documentos/UNEB/TrabalhoFinalED2/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

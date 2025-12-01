@@ -75,6 +75,20 @@
     </a>
 </div>
 
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="container mt-3">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+
 <div class="container-box">
 
     <h2 class="text-center mb-4" style="color: var(--laranja-escuro); font-weight:700;">
@@ -94,7 +108,12 @@
                 <small>CPF: {{ p.cpf }}</small>
             </div>
 
-            <form method="POST" action="/remover_passageiro" onsubmit="return confirmarRemocao()">
+            <!-- CPF invisível para envio -->
+            <input type="hidden" form="confirmarVooForm" name="cpf_passageiros_existentes[]" value="{{ p.cpf }}">
+
+            
+            <form method="POST" action="{{ url_for('remover_passageiro', codigo=codigo) }}" 
+                onsubmit="return confirmarRemocao(this)">
                 <input type="hidden" name="id" value="{{ loop.index0 }}">
                 <button class="btn btn-danger btn-sm">Remover</button>
             </form>
@@ -105,9 +124,16 @@
 
     <hr class="my-4">
 
-    <h5 class="mb-3">Adicionar novo passageiro:</h5>
 
+    <h5 class="mb-3">Adicionar novo passageiro:</h5>
+    <!-- FORM de adicionar passageiros -->
     <form method="POST" action="/confirmar_passageiros">
+        <!-- CPF do responsável (novo) -->
+        <div class="mb-3">
+            <label class="form-label">CPF do responsável pela reserva:</label>
+            <input type="text" name="cpf_responsavel" id="cpf_responsavel"
+                class="form-control" placeholder="Digite o CPF do responsável" required>
+        </div>
 
         <div id="listaPassageiros"></div>
 
@@ -120,14 +146,37 @@
         </button>
     </form>
 
+
+    <hr class="my-4">
+
 </div>
 
-<script>
-function confirmarRemocao() {
-    return confirm("Gostaria de remover essa pessoa da sua reserva?");
-}
+<!-- MODAL BONITO DE CONFIRMAÇÃO -->
+<div class="modal fade" id="confirmModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border-radius: 12px;">
+      
+      <div class="modal-header" style="background:#ff7b00; color:white;">
+        <h5 class="modal-title">Confirmar Remoção</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
 
-/* ADICIONAR NOVO PASSAGEIRO */
+      <div class="modal-body" style="font-size:1.1rem;">
+        Tem certeza que deseja remover este passageiro da sua reserva?
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button id="confirmDeleteBtn" class="btn btn-danger">Remover</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
 function adicionarPassageiro() {
     const div = document.createElement("div");
     div.classList.add("passageiro-box");
@@ -151,6 +200,20 @@ function adicionarPassageiro() {
     `;
 
     document.getElementById("listaPassageiros").appendChild(div);
+}
+let formToSubmit = null;
+
+function confirmarRemocao(form) {
+    formToSubmit = form;
+
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'));
+    modal.show();
+
+    document.getElementById("confirmDeleteBtn").onclick = function () {
+        formToSubmit.submit();
+    };
+
+    return false;
 }
 </script>
 

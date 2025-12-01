@@ -1,5 +1,6 @@
 import os
 import csv
+import re
 import ast
 from flask import Flask, json, render_template, request, redirect, session, url_for, flash, get_flashed_messages
 from passageiros_btree import PassageirosBTree 
@@ -106,9 +107,9 @@ def login_usuario_post():
     usuarios = carregar_usuarios()  # função que lê usuarios.text
 
     # procura usuário com nome e senha corretos
-    usuario_valido = any(u.get('nome') == nome and u.get('senha') == senha for u in usuarios)
+    usuario_valido = next((u for u in usuarios if u.get('nome') == nome and u.get('senha') == senha), None)
     if usuario_valido:
-        session["usuario_logado"] = nome
+        session["usuario_logado"] = usuario_valido  # salva dict completo
         session.modified = True
         return redirect(url_for('painel_usuario'))
 
@@ -149,6 +150,12 @@ def painel_admin():
     voos = carregar_voos()
     return render_template('pag_adm.html', voos=voos)
 
+
+def carregar_passageiros():
+    df = pd.read_csv("arquivos/passageiros.csv")
+    df = df.fillna("")  # evita NaN -> Undefined no template
+    return df.to_dict(orient="records")
+
 @app.route("/painel_usuario")
 def painel_usuario():
     usuario = session.get("usuario_logado")
@@ -156,10 +163,27 @@ def painel_usuario():
         flash("Faça login primeiro.", "erro")
         return redirect(url_for("login_usuario"))
 
+    # garantir estruturas na sessão
+    meus_voos = session.get("meus_voos", [])
+    voos_pendentes = session.get("voos_pendentes", [])
+    # passageiros salvos por código na session (estrutura esperada: {codigo: [ {nome,cpf,tipo}, ... ]})
+    passageiros_sessao = session.get("passageiros_voo", {})
+
+    # filtrar só os do usuário
+    meus_voos_usuario = [
+        v for v in meus_voos
+        if v.get("usuario") == usuario and not v.get("confirmado", False)
+    ]
+    pendentes_usuario = [
+        v for v in voos_pendentes
+        if v.get("usuario") == usuario and not v.get("confirmado", False)
+    ]
+
     meus_voos = [
         v for v in session.get("meus_voos", [])
         if v.get("usuario") == usuario and not v.get("confirmado", False)
     ]
+
 
     voos_pendentes = [
         v for v in session.get("voos_pendentes", [])
@@ -168,9 +192,11 @@ def painel_usuario():
 
     return render_template(
         "painelusuario.html",
-        voos=None,
-        meus_voos=meus_voos,
-        voos_pendentes=voos_pendentes
+        meus_voos=meus_voos_usuario,
+        voos_pendentes=pendentes_usuario,
+        passageiros_sessao=passageiros_sessao,
+        voos=None, 
+        usuario = usuario
     )
 
 
@@ -181,6 +207,34 @@ def carregar_meus_voos():
     if "meus_voos" not in session:
         session["meus_voos"] = []
     return session["meus_voos"]
+
+
+
+@app.route("/adicionar_voos_usuario")
+def adicionar_voos_usuario():
+    usuario = session.get("usuario_logado")
+    if not usuario:
+        return redirect(url_for("login_usuario"))
+
+    codigo = session.get("codigo_voo_selecionado")
+
+    # CARREGAR VOOS DO ARQUIVO
+    todos = carregar_voos()
+    voo = next((v for v in todos if v["codigo"] == codigo), None)
+
+    # GARANTIR E BUSCAR PASSAGEIROS DO VOO
+    passageiros_existentes = []
+    if "passageiros_voo" in session and codigo in session["passageiros_voo"]:
+        passageiros_existentes = session["passageiros_voo"][codigo]
+
+    return render_template(
+        "adicionar_voos_usuario.html",
+        voo=voo,
+        passageiros_existentes=passageiros_existentes,
+        codigo=codigo
+    )
+
+
 
 def adicionar_voo_usuario(codigo_voo):
     usuario = session.get("usuario_logado")
@@ -228,8 +282,12 @@ def remover_voo_usuario(codigo_voo):
     session.modified = True
 
 
-@app.route("/buscar_voos_usuario")
+@app.get("/buscar_voos_usuario")
 def buscar_voos_usuario():
+    usuario = session.get("usuario_logado")
+    if not usuario:
+        return redirect(url_for("login_usuario"))
+
     origem = request.args.get("origem", "").strip().lower()
     destino = request.args.get("destino", "").strip().lower()
 
@@ -239,12 +297,26 @@ def buscar_voos_usuario():
         if origem in v["origem"].lower() and destino in v["destino"].lower()
     ]
 
+    # manter consistência com painel_usuario()
+    meus_voos = [
+        v for v in session.get("meus_voos", [])
+        if v.get("usuario") == usuario and not v.get("confirmado", False)
+    ]
+    pendentes = [
+        v for v in session.get("voos_pendentes", [])
+        if v.get("usuario") == usuario and not v.get("confirmado", False)
+    ]
+
+    passageiros_sessao = carregar_passageiros()
+
     return render_template(
         "painelusuario.html",
         voos=voos_filtrados,
-        meus_voos=session.get("meus_voos", []),
-        voos_pendentes=session.get("voos_pendentes", [])
+        meus_voos=meus_voos,
+        voos_pendentes=pendentes,
+        passageiros_sessao=passageiros_sessao
     )
+
 
 @app.post("/adicionar_ao_carrinho/<codigo>")
 def adicionar_ao_carrinho(codigo):
@@ -382,6 +454,24 @@ def adicionar_voo_usuario(codigo_voo):
     return True
 
 
+def carregar_voos_confirmados():
+    if not os.path.exists("arquivos/voos_confirmados.json"):
+        return []
+
+    with open("arquivos/voos_confirmados.json", "r", encoding="utf-8") as f:
+        try:
+            return json.load(f)
+        except:
+            return []
+
+
+
+
+def salvar_voos_confirmados(lista):
+    with open("arquivos/voos_confirmados.json", "w", encoding="utf-8") as f:
+        json.dump(lista, f, ensure_ascii=False, indent=4)
+
+
 
 @app.route("/voos_confirmados")
 def voos_confirmados():
@@ -390,55 +480,88 @@ def voos_confirmados():
     if not usuario:
         return redirect(url_for("login_usuario"))
 
-    voos = [
-        v for v in session.get("voos_pendentes", [])
-        if v.get("usuario") == usuario
+    # ---- CARREGAR ARQUIVO JSON ----
+    voos_arquivo = carregar_voos_confirmados()
+
+    # ---- FILTRAR SOMENTE OS VOOS DO USUÁRIO ----
+    voos_usuario = [
+        v for v in voos_arquivo
+        if isinstance(v.get("usuario"), dict) and v["usuario"].get("nome") == usuario.get("nome")
     ]
 
-    return render_template("voos_confirmados.html", voos=voos)
 
+    return render_template("voos_confirmados.html", voos=voos_usuario)
 
 
 # confirma passageiros do usuario
 @app.route("/confirmar_passageiros", methods=["POST"])
 def confirmar_passageiros():
+    usuario = session.get("usuario_logado")
+    codigo = session.get("codigo_voo_selecionado")  # voo atual
 
-    voo = session.get("codigo_voo_selecionado")
+    if not usuario or not codigo:
+        flash("Erro: voo ou usuário não encontrados.", "danger")
+        return redirect(url_for("painel_usuario"))
 
+    # --------------------------
+    # PEGAR CPF DO RESPONSÁVEL
+    # --------------------------
+    cpf_responsavel = request.form.get("cpf_responsavel", "").strip()
+    cpf_responsavel = cpf_responsavel.replace(".", "").replace("-", "")
+
+    if not cpf_responsavel or len(cpf_responsavel) != 11 or not cpf_responsavel.isdigit():
+        flash("CPF do responsável inválido!", "danger")
+        return redirect(url_for("adicionar_voos_usuario"))
+
+    # Salvar cpf_responsavel por código
+    if "passageiros_responsavel" not in session:
+        session["passageiros_responsavel"] = {}
+
+    session["passageiros_responsavel"][codigo] = cpf_responsavel
+
+    # ----------------------------
+    # PASSAGEIROS ADICIONAIS
+    # ----------------------------
+    if "passageiros_voo" not in session:
+        session["passageiros_voo"] = {}
+
+    if codigo not in session["passageiros_voo"]:
+        session["passageiros_voo"][codigo] = []
+
+    passageiros_existentes = session["passageiros_voo"][codigo]
+
+    # CAPTURAR PASSAGEIROS NOVOS
     nomes = request.form.getlist("novo_nome[]")
     cpfs = request.form.getlist("novo_cpf[]")
     tipos = request.form.getlist("novo_tipo[]")
 
-    novos = []
+    for nome, cpf, tipo in zip(nomes, cpfs, tipos):
+        nome = nome.strip()
+        cpf = cpf.strip().replace(".", "").replace("-", "")
 
-    for i in range(len(nomes)):
-        passageiro = {
-            "nome": nomes[i],
-            "cpf": cpfs[i],
-            "tipo": tipos[i]
-        }
-        novos.append(passageiro)
+        # ❗ PULA se for o CPF do responsável
+        if cpf == cpf_responsavel:
+            continue
 
-        # 👉 ADICIONAR NA ÁRVORE B
-        passageiros_db.inserir_passageiro(
-            cpf=cpfs[i],
-            voo=voo,
-            origem="",
-            destino="",
-            horario=""
-        )
-    # adiciona aos existentes
-    session["passageiros_voo"][voo].extend(novos)
+        if nome and cpf:
+            passageiros_existentes.append({
+                "nome": nome,
+                "cpf": cpf,
+                "tipo": tipo
+            })
+
+    # SALVAR NA SESSION
+    session["passageiros_voo"][codigo] = passageiros_existentes
     session.modified = True
 
-    return redirect("/adicionar_voos_usuario")
+    flash("Passageiros e CPF do responsável salvos!", "success")
+    return redirect(url_for("adicionar_voos_usuario"))
 
 
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect(url_for("index"))   # Volta para o menu
-
 
 
 @app.route("/confirmar_voo/<codigo>", methods=["POST"])
@@ -448,24 +571,30 @@ def confirmar_voo(codigo):
         flash("Faça login para continuar.", "erro")
         return redirect(url_for("login_usuario"))
 
-    # 1. CPF do responsável pelo voo
+    #  Pegar passageiros registrados na sessão (lista daquele voo)
+    passageiros_registrados = session.get("passageiros_voo", {}).get(codigo, [])
+
+    # CPF do responsável
     cpf_usuario = request.form.get("cpf_usuario", "").strip()
-    if len(cpf_usuario) != 11 or not cpf_usuario.isdigit():
+    cpf_usuario = re.sub(r"\D", "", cpf_usuario)
+
+    # fallback: se não vier no form
+    if not cpf_usuario and isinstance(usuario, dict):
+        cpf_usuario = re.sub(r"\D", "", str(usuario.get("cpf", "")))
+
+    if not cpf_usuario or len(cpf_usuario) != 11:
         flash("CPF inválido!", "erro")
         return redirect(url_for("painel_usuario"))
 
-    # 2. Carregar todos os voos cadastrados
+    # Carregar voos
     todos_voos = carregar_voos()
-
     voo = next((v for v in todos_voos if v["codigo"] == codigo), None)
+
     if not voo:
         flash("Voo não encontrado!", "erro")
         return redirect(url_for("painel_usuario"))
 
-    # 3. Pegar passageiros registrados na sessão
-    passageiros_registrados = session.get("passageiros_voo", {}).get(codigo, [])
-
-    # 4. Registrar passageiro responsável + outros passageiros
+    # Registrar passageiros
     registros_para_csv = []
 
     # passageiro principal
@@ -476,10 +605,9 @@ def confirmar_voo(codigo):
         destino=voo["destino"],
         horario=voo["horario"]
     )
-
     registros_para_csv.append([cpf_usuario, voo["codigo"], voo["origem"], voo["destino"], voo["horario"]])
 
-    # outros passageiros
+    # passageiros adicionais
     for p in passageiros_registrados:
         passageiros_db.inserir_passageiro(
             cpf=p["cpf"],
@@ -492,16 +620,47 @@ def confirmar_voo(codigo):
 
     salvar_passageiros_csv(registros_para_csv)
 
-    # 5. Remover da lista "meus_voos"
+    # 1. quantidade de passageiros
+    qtd_passageiros = 1 + len(passageiros_registrados)
+
+    # 2. atualizar assentos disponíveis
+    voo["assentos_disponiveis"] -= qtd_passageiros
+
+    # 3. salvar lista completa no arquivo
+    def salvar_voos(todos_voos):
+        with open("arquivos/listaVoos.txt", "w", encoding="utf-8") as f:
+            for v in todos_voos:
+                linha = (
+                    f"{v['codigo']};{v['origem']};{v['destino']};"
+                    f"{v['data']};{v['horario']};{v['preco']};"
+                    f"{v['assentos_totais']};{v['assentos_disponiveis']}\n"
+                )
+                f.write(linha)
+
+    # 4. atualizar arquivo
+    salvar_voos(todos_voos)
+
+
+
+
+
+    # remover voo da lista do usuário
     meus_voos = session.get("meus_voos", [])
     meus_voos = [v for v in meus_voos if v["codigo"] != codigo]
     session["meus_voos"] = meus_voos
 
-    # 6. Mover para voos pendentes
-    voos_pendentes = session.get("voos_pendentes", [])
+    # ----------- CRIA O OBJETO DE CONFIRMAÇÃO -----------
     voo_confirmado = voo.copy()
     voo_confirmado["usuario"] = usuario
     voo_confirmado["confirmado"] = True
+
+    # ----------- SALVAR EM ARQUIVO PERMANENTE -----------
+    voos_arquivo = carregar_voos_confirmados()
+    voos_arquivo.append(voo_confirmado)
+    salvar_voos_confirmados(voos_arquivo)
+
+    # ----------- SALVAR NA SESSÃO (opcional) -----------
+    voos_pendentes = session.get("voos_pendentes", [])
     voos_pendentes.append(voo_confirmado)
     session["voos_pendentes"] = voos_pendentes
 
@@ -509,14 +668,11 @@ def confirmar_voo(codigo):
     if "passageiros_voo" in session:
         session["passageiros_voo"].pop(codigo, None)
 
-
-  
-    
-
     session.modified = True
     flash("Voo confirmado e passageiros registrados!", "sucesso")
 
     return redirect(url_for("painel_usuario"))
+
 
 
 

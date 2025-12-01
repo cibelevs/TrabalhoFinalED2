@@ -111,6 +111,42 @@
         <i class="fa-solid fa-arrow-left me-1"></i> Voltar
       </a>
     </div>
+    {% if passageiros_confirmados %}
+    <div class="mt-4">
+
+      <h4 class="text-center mb-3" style="color: var(--laranja);">
+          Passageiros Confirmados
+      </h4>
+
+      <div class="row g-3">
+
+        {% set total_geral = 0 %}
+
+        {% for p in passageiros_confirmados %}
+        {% set total_geral = total_geral + p.valor %}
+
+        <div class="col-md-4">
+          <div class="card p-3 shadow-sm" style="border-left: 5px solid var(--laranja);">
+            <h5 class="mb-1">{{ p.nome }}</h5>
+            <p class="mb-1"><strong>Tipo:</strong> {{ p.tipo }}</p>
+            <p class="mb-1">
+              <strong>Valor Total:</strong>
+              R$ {{ "%.2f"|format(p.valor) }}
+            </p>
+          </div>
+        </div>
+
+        {% endfor %}
+
+      </div>
+
+      <div class="alert alert-warning text-center mt-4">
+          <strong>Total Geral:</strong>
+          R$ {{ "%.2f"|format(total_geral) }}
+      </div>
+
+    </div>
+    {% endif %}
 
     <!-- Mensagens flash -->
     {% with messages = get_flashed_messages(with_categories=true) %}

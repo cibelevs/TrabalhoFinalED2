@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <h1 class="titulo mb-4">Painel do Usuário</h1>
+
+    <title>Painel do Usuário</title>
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 
@@ -44,13 +46,6 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
 
-        .card-header {
-            background-color: var(--laranja);
-            color: var(--branco);
-            font-weight: 600;
-            border-radius: 12px 12px 0 0;
-        }
-
         .btn-laranja {
             background-color: var(--laranja);
             color: white;
@@ -62,150 +57,111 @@
             background-color: var(--laranja-escuro);
         }
 
-       footer {
-        margin-top: auto;
-        padding: 20px;
-        text-align: center;
-        color: var(--cinza-texto);
-        font-size: 0.9rem;
-        background-color: var(--cinza-claro);
+        footer {
+            margin-top: auto;
+            padding: 20px;
+            text-align: center;
+            color: var(--cinza-texto);
+            font-size: 0.9rem;
+            background-color: var(--cinza-claro);
         }
 
-        .tabela-voos th {
-            background-color: var(--laranja);
+        .banner-final {
+            width: 100%;
+            background: linear-gradient(135deg, #ff7b00, #ff9e42);
             color: white;
+            padding: 60px 40px;
+            margin-top: 80px;
+            border-radius: 20px 20px 0 0;
+            box-shadow: 0 -5px 25px rgba(0,0,0,0.15);
+        }
+
+        .banner-conteudo {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 40px;
+            max-width: 1100px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+        }
+
+        .banner-imagem img {
+            width: 100%;
+            max-width: 380px;
+            border-radius: 15px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            object-fit: cover;
         }
     </style>
 </head>
 
-    <body>
-    <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg fixed-top">
-        <div class="container">
-            <a class="navbar-brand" href="/">✈ Sistema de Controle de Voos</a>
-            <div class="collapse navbar-collapse justify-content-end">
-                <ul class="navbar-nav">
-                   <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('voos_confirmados') }}">
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="/">✈ Sistema de Controle de Voos</a>
+        <div class="collapse navbar-collapse justify-content-end">
+            <ul class="navbar-nav">
+               <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('voos_confirmados') }}">
                         <i class="fa-solid fa-plane-circle-check me-1"></i> Voos Confirmados
                     </a>
-                   </li> 
-                    <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('logout') }}">
-                            <i class="fa-solid fa-right-from-bracket me-1"></i> Sair
-                        </a>
-
-                    </li>
-                </ul>
-            </div>
+               </li> 
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('logout') }}">
+                        <i class="fa-solid fa-right-from-bracket me-1"></i> Sair
+                    </a>
+                </li>
+            </ul>
         </div>
-    </nav>
+    </div>
+</nav>
 
-    <!-- Conteúdo principal -->
-    <div class="container container-main">
-        <h2 class="text-center mb-5" style="color: var(--laranja-escuro); font-weight: 700;">
-            Painel do Usuário
-        </h2>
+<!-- Conteúdo principal -->
+<div class="container container-main">
 
-        <!-- Mensagens -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-            <div class="mb-4">
-              {% for category, msg in messages %}
-                <div class="alert alert-{{ 'danger' if category == 'erro' else 'success' }} alert-dismissible fade show" role="alert">
-                    {{ msg }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-              {% endfor %}
+    <h2 class="text-center mb-5" style="color: var(--laranja-escuro); font-weight: 700;">
+        Painel do Usuário
+    </h2>
+
+    <!-- Mensagens -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="mb-4">
+          {% for category, msg in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'erro' else 'success' }} alert-dismissible fade show" role="alert">
+                {{ msg }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-          {% endif %}
-        {% endwith %}
-
-        <!-- 🔍 Busca de voos -->
-        <form method="GET" action="{{ url_for('buscar_voos_usuario') }}" class="row g-3 align-items-end">
-            <div class="col-md-5">
-                <label for="origem" class="form-label">Origem</label>
-                <input type="text" name="origem" id="origem" class="form-control" placeholder="Ex: São Paulo">
-            </div>
-            <div class="col-md-5">
-                <label for="destino" class="form-label">Destino</label>
-                <input type="text" name="destino" id="destino" class="form-control" placeholder="Ex: Rio de Janeiro">
-            </div>
-            <div class="col-md-2 d-grid">
-                <button type="submit" class="btn btn-laranja"><i class="fa-solid fa-search me-1"></i> Buscar</button>
-            </div>
-        </form>
-
-        <!-- Resultados -->
-        {% if voos is not none %}
-          <h5 class="mt-4">Resultados</h5>
-          {% if voos %}
-            <table class="table">
-                <thead>
-                    <tr>
-                    <th>Código</th>
-                    <th>Origem</th>
-                    <th>Destino</th>
-                    <th>Data</th>
-                    <th>Horário</th>
-                    <th>Assentos Totais</th>
-                    <th>Assentos Disponíveis</th>
-                    <th>Preço</th>
-                    <th>Ação</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    {% for v in voos %}
-                    <tr>
-                    <td>{{ v.codigo }}</td>
-                    <td>{{ v.origem }}</td>
-                    <td>{{ v.destino }}</td>
-                    <td>{{ v.data }}</td>
-                    <td>{{ v.horario }}</td>
-                    <td>{{ v.assentos_totais }}</td>
-                    <td>{{ v.assentos_disponiveis }}</td>
-                    <td>R$ {{ "%.2f"|format(v.preco) }}</td>
-
-                    <td>
-                        <form action="{{ url_for('adicionar_ao_carrinho', codigo=v.codigo) }}" method="post" style="display:inline;">
-                        <button class="btn btn-sm btn-laranja" type="submit">
-                            <i class="fa-solid fa-plus"></i> Adicionar
-                        </button>
-                        </form>
-                    </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-                </table>
-
-          {% else %}
-            <p class="text-muted">Nenhum voo encontrado para essa busca.</p>
-          {% endif %}
-        {% endif %}
-
-
-        <div class="alert alert-warning mt-4 shadow-sm" style="border-left: 6px solid var(--laranja);">
-            <strong>Voos aguardando confirmação</strong>  
-            <p class="mt-2 mb-0" style="color: #5a5a5a;">
-                Os voos listados abaixo ainda <strong>não estão cadastrados definitivamente</strong> no sistema.  
-                Eles representam reservas pendentes que você adicionou e que precisam ser confirmadas para serem registradas como voos válidos.
-                <br><br>
-                Após clicar em <strong>confirmar</strong>, o voo será movido automaticamente para a aba
-                <em>"Voos Confirmados"</em> e <strong>não aparecerá mais nesta lista</strong>.
-            </p>
+          {% endfor %}
         </div>
+      {% endif %}
+    {% endwith %}
 
-        <h3 class="mt-5" style="color: var(--laranja); font-weight: 700; text-transform: uppercase; text-align: left;">
-            ✈ Meus Voos Não Confirmados
-        </h3>
+    <!-- Busca -->
+    <form method="GET" action="{{ url_for('buscar_voos_usuario') }}" class="row g-3 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label">Origem</label>
+            <input type="text" name="origem" class="form-control">
+        </div>
+        <div class="col-md-5">
+            <label class="form-label">Destino</label>
+            <input type="text" name="destino" class="form-control">
+        </div>
+        <div class="col-md-2 d-grid">
+            <button class="btn btn-laranja"><i class="fa-solid fa-search me-1"></i> Buscar</button>
+        </div>
+    </form>
 
+    {% if voos is not none %}
+      <h5 class="mt-4">Resultados</h5>
 
-    {% if meus_voos %}
-    <div class="table-responsive mt-4">
-      <table class="table table-hover align-middle shadow-sm elegante-tabela">
-        <thead>
-            <tr>
+      {% if voos %}
+        <table class="table">
+            <thead>
+                <tr>
                 <th>Código</th>
                 <th>Origem</th>
                 <th>Destino</th>
@@ -214,73 +170,129 @@
                 <th>Assentos Totais</th>
                 <th>Assentos Disponíveis</th>
                 <th>Preço</th>
-                <th class="text-center">Ações</th>
-            </tr>
-        </thead>
+                <th>Ação</th>
+                </tr>
+            </thead>
 
-        <tbody>
-            {% for voo in meus_voos %}
-            <tr>
-                <td><strong>{{ voo.codigo }}</strong></td>
-                <td>{{ voo.origem }}</td>
-                <td>{{ voo.destino }}</td>
-                <td>{{ voo.data }}</td>
-                <td>{{ voo.horario }}</td>
-                <td>{{ voo.assentos_totais }}</td>
-                <td>{{ voo.assentos_disponiveis }}</td>
-                <td><strong>R$ {{ "%.2f"|format(voo.preco) }}</strong></td>
+            <tbody>
+                {% for v in voos %}
+                <tr>
+                <td>{{ v.codigo }}</td>
+                <td>{{ v.origem }}</td>
+                <td>{{ v.destino }}</td>
+                <td>{{ v.data }}</td>
+                <td>{{ v.horario }}</td>
+                <td>{{ v.assentos_totais }}</td>
+                <td>{{ v.assentos_disponiveis }}</td>
+                <td>R$ {{ "%.2f"|format(v.preco) }}</td>
 
-                <td class="text-center">
-
-
-                     <form action="{{ url_for('confirmar_voo', codigo=voo.codigo) }}" method="post" style="display:inline;">
-                            <input type="text" name="cpf_usuario" placeholder="Digite seu CPF"
-                                class="form-control form-control-sm mb-2" required>
-
-                            <button class="btn btn-outline-success btn-sm rounded-pill px-3" type="submit">
-                                <i class="fa-solid fa-check"></i>
-                            </button>
-                      </form>
-
-                    <!-- REMOVER -->
-                    <form action="{{ url_for('remover_do_carrinho', codigo=voo.codigo) }}"
-                        method="post" style="display:inline;">
-                        <button class="btn btn-outline-danger btn-sm rounded-pill px-3">
-                            <i class="fa-solid fa-trash"></i>
+                <td>
+                    <form action="{{ url_for('adicionar_ao_carrinho', codigo=v.codigo) }}" method="post">
+                        <button class="btn btn-sm btn-laranja" type="submit">
+                            <i class="fa-solid fa-plus"></i> Adicionar
                         </button>
                     </form>
-
-                    <!-- EDITAR PASSAGEIROS -->
-                    <form action="{{ url_for('selecionar_voo', codigo=voo.codigo) }}" 
-                        method="get" style="display:inline;">
-                        <button class="btn btn-outline-warning btn-sm rounded-pill px-3">
-                            <i class="fa-solid fa-pen"></i>
-                        </button>
-                    </form>
-
-                    
-
                 </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+      {% else %}
+        <p class="text-muted">Nenhum voo encontrado.</p>
+      {% endif %}
+    {% endif %}
+
+
+    <div class="alert alert-warning mt-4 shadow-sm" style="border-left: 6px solid var(--laranja);">
+        <strong>Voos aguardando confirmação</strong>  
+        <p class="mt-2 mb-0" style="color: #5a5a5a;">
+            Os voos listados abaixo ainda <strong>não estão cadastrados definitivamente</strong> no sistema.  
+            Eles representam reservas pendentes que você adicionou e que precisam ser confirmadas para serem registradas como voos válidos.
+            <br><br>
+            Após clicar em <strong>confirmar</strong>, o voo será movido automaticamente para a aba
+            <em>"Voos Confirmados"</em> e <strong>não aparecerá mais nesta lista</strong>.
+        </p>
+    </div>
+
+    <!-- VOOS NÃO CONFIRMADOS -->
+    <h3 class="mt-5" style="color: var(--laranja); font-weight: 700;">
+        ✈ Meus Voos Não Confirmados
+    </h3>
+
+    {% if meus_voos %}
+    <div class="table-responsive mt-4">
+        <table class="table table-hover align-middle shadow-sm elegante-tabela">
+            <thead>
+                <tr>
+                    <th>Código</th>
+                    <th>Origem</th>
+                    <th>Destino</th>
+                    <th>Data</th>
+                    <th>Horário</th>
+                    <th>Assentos Totais</th>
+                    <th>Assentos Disponíveis</th>
+                    <th>Preço</th>
+                    <th class="text-center">Ações</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for voo in meus_voos %}
+                <tr>
+                    <td>{{ voo.codigo }}</td>
+                    <td>{{ voo.origem }}</td>
+                    <td>{{ voo.destino }}</td>
+                    <td>{{ voo.data }}</td>
+                    <td>{{ voo.horario }}</td>
+                    <td>{{ voo.assentos_totais }}</td>
+                    <td>{{ voo.assentos_disponiveis }}</td>
+                    <td><strong>R$ {{ "%.2f"|format(voo.preco) }}</strong></td>
+
+                    <td class="text-center">
+
+                        <form action="{{ url_for('remover_do_carrinho', codigo=voo.codigo) }}" method="post" class="d-inline">
+                            <button class="btn btn-outline-danger btn-sm rounded-pill px-3">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+
+                        <form action="{{ url_for('selecionar_voo', codigo=voo.codigo) }}" method="get" class="d-inline">
+                            <button class="btn btn-outline-warning btn-sm rounded-pill px-3">
+                                <i class="fa-solid fa-pen"></i>
+                            </button>
+                        </form>
+
+                        <button class="btn btn-outline-success btn-sm rounded-pill px-3"
+                            onclick="abrirModalConfirmacao('{{ voo.codigo }}',
+                                                          {{ voo.preco }},
+                                                          {{ passageiros_sessao[voo.codigo] if voo.codigo in passageiros_sessao else []
+|length }})">
+                            <i class="fa-solid fa-check"></i>
+                        </button>
+
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
     {% else %}
-    <p class="text-muted mt-3">Você ainda não adicionou voos.</p>
+    <p class="text-muted">Você ainda não adicionou voos.</p>
     {% endif %}
 
-    </div>
+</div>
 
+<!-- Banner final -->
 <div class="banner-final">
     <div class="banner-conteudo">
-        <div class="banner-texto">
+        <div>
             <h2>Pronto para decolar?</h2>
-            <p>Gerencie seus voos com facilidade e viva experiências inesquecíveis nos céus!</p>
+            <p>Gerencie seus voos com facilidade e viva experiências inesquecíveis!</p>
         </div>
         <div class="banner-imagem">
-            <img src="{{ url_for('static', filename='img/aviao_decor.jpg') }}" alt="Mala de viagem decorativa">
+            <img src="{{ url_for('static', filename='img/aviao_decor.jpg') }}" alt="Avião decorativo">
         </div>
     </div>
 </div>
@@ -292,83 +304,90 @@
     </p>
 </footer>
 
+<!-- Modal (APENAS 1) -->
+<div class="modal fade" id="modalConfirmarVoo" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg border-0" style="border-radius: 20px;">
+      <div class="modal-header bg-warning bg-gradient text-dark" style="border-radius: 20px 20px 0 0;">
+        <h5 class="modal-title fw-bold">
+          <i class="fa-solid fa-circle-exclamation me-2"></i> Confirmar Compra
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body text-center py-4">
+          <h5 class="fw-bold mb-3">Tem certeza que deseja confirmar?</h5>
+
+          <p class="mb-1"><strong>Preço por passageiro:</strong> R$ <span id="modalPreco"></span></p>
+          <p class="mb-1"><strong>Passageiros adicionados:</strong> <span id="modalQtd"></span></p>
+
+          <div id="modalListaNomes" class="mt-2"></div>
+
+          <h4 class="fw-bold text-success mt-3">
+              Total: R$ <span id="modalTotal"></span>
+          </h4>
+      </div>
+
+      <div class="modal-footer">
+          <button class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
+          <form id="formConfirmarVoo" action="" method="POST">
+               <input type="hidden" name="cpf_usuario"
+           value="{{ session.get('passageiros_responsavel', {}).get(voo_codigo_atual, '') }}">
+            <button class="btn btn-success rounded-pill px-4 fw-bold">Confirmar</button>
+          </form>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-<style>
-    .banner-final {
-        width: 100%;
-        background: linear-gradient(135deg, #ff7b00, #ff9e42);
-        color: white;
-        padding: 60px 40px;
-        margin-top: 80px;
-        border-radius: 20px 20px 0 0;
-        box-shadow: 0 -5px 25px rgba(0,0,0,0.15);
+<script>
+    window.passageiros = {{ passageiros_sessao | tojson | safe }};
+    window.responsaveis = {{ session.get('passageiros_responsavel', {}) | tojson | safe }};
+</script>
+
+<script>
+function abrirModalConfirmacao(codigo, preco, qtd) {
+    document.getElementById("modalPreco").innerText = preco.toFixed(2);
+    document.getElementById("modalQtd").innerText = qtd;
+    document.getElementById("modalTotal").innerText = (preco * qtd).toFixed(2);
+
+    const passageiros = window.passageiros[codigo] || [];
+
+    let html = "<strong>Passageiros:</strong><br>";
+    if (passageiros.length === 0) {
+        html += "<em>Nenhum passageiro cadastrado.</em>";
+    } else {
+        passageiros.forEach(p => html += `• ${p.nome}<br>`);
     }
 
-    .banner-conteudo {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 40px;
-        max-width: 1100px;
-        margin: 0 auto;
-        flex-wrap: wrap;
+    document.getElementById("modalListaNomes").innerHTML = html;
+
+    document.getElementById("formConfirmarVoo").action = "/confirmar_voo/" + codigo;
+
+
+    document.getElementById("formConfirmarVoo").action = "/confirmar_voo/" + codigo;
+
+    // garantir hidden cpf
+    let form = document.getElementById("formConfirmarVoo");
+    let hidden = form.querySelector('input[name="cpf_usuario"]');
+    if (!hidden) {
+        hidden = document.createElement("input");
+        hidden.type = "hidden";
+        hidden.name = "cpf_usuario";
+        form.appendChild(hidden);
     }
 
-    .banner-texto {
-        flex: 1 1 500px;
-    }
+    // preencher com o responsável salvo na sessão (se existir), senão vazio
+    hidden.value = window.responsaveis && window.responsaveis[codigo] ? window.responsaveis[codigo] : "";
 
-    .banner-texto h2 {
-        font-weight: 700;
-        font-size: 2rem;
-        margin-bottom: 15px;
-    }
 
-    .banner-texto p {
-        font-size: 1.15rem;
-        opacity: 0.95;
-        line-height: 1.6;
-        margin: 0;
-    }
-
-    .banner-imagem {
-        flex: 1 1 350px;
-        text-align: right;
-    }
-
-    .banner-imagem img {
-        width: 100%;
-        max-width: 380px;
-        border-radius: 15px;
-        box-shadow: 0 6px 20px rgba(0,0,0,0.25);
-        object-fit: cover;
-    }
-
-    footer {
-        margin-top: 0;
-        padding: 20px;
-        text-align: center;
-        color: var(--cinza-texto);
-        font-size: 0.9rem;
-        background-color: var(--cinza-claro);
-    }
-
-    @media (max-width: 768px) {
-        .banner-conteudo {
-            flex-direction: column;
-            text-align: center;
-        }
-        .banner-imagem {
-            text-align: center;
-        }
-        .banner-imagem img {
-            max-width: 300px;
-            margin-top: 20px;
-        }
-    }
-</style>
+    const modal = new bootstrap.Modal(document.getElementById("modalConfirmarVoo"));
+    modal.show();
+}
+</script>
 
 </body>
-
 </html>
