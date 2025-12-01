@@ -604,7 +604,6 @@ def confirmar_passageiros():
 # CONFIRMAÇÃO DE VOOS E REGISTRO DE PASSAGEIROS
 # -----------------------
 
-
 @app.route("/confirmar_voo/<codigo>", methods=["POST"])
 def confirmar_voo(codigo):
     usuario = session.get("usuario_logado")
@@ -612,34 +611,30 @@ def confirmar_voo(codigo):
         flash("Faça login para continuar.", "erro")
         return redirect(url_for("login_usuario"))
 
-    #  Pegar passageiros registrados na sessão (lista daquele voo)
+    #  Pegar passageiros registrados na sessão (lista daquele voo)
     passageiros_registrados = session.get("passageiros_voo", {}).get(codigo, [])
 
     # ====================================================================
-    # 🔥 CORREÇÃO: Busca o CPF do responsável na lista de passageiros
+    # 🔥 Busca o CPF do responsável na lista de passageiros
     # ====================================================================
-    # Tenta pegar o CPF do responsável marcado na lista de passageiros na sessão
     cpf_responsavel_sessao = next(
         (p["cpf"] for p in passageiros_registrados if p.get("tipo") == "responsavel"),
         None
     )
 
-    # CPF do responsável (Prioriza o que veio do formulário de confirmação, se houver)
+    # CPF do responsável (prioriza o que veio do form)
     cpf_usuario = request.form.get("cpf_usuario", "").strip()
     cpf_usuario = re.sub(r"\D", "", cpf_usuario)
-    
-    # Fallback: usar o CPF encontrado na lista de passageiros da sessão
+
+    # fallback
     if not cpf_usuario and cpf_responsavel_sessao:
         cpf_usuario = cpf_responsavel_sessao
-
-    # Nota: A antiga busca por usuario.get("cpf") foi removida, pois era nula.
-    # ====================================================================
 
     if not cpf_usuario or len(cpf_usuario) != 11:
         flash("CPF inválido! O CPF do responsável não foi encontrado.", "erro")
         return redirect(url_for("painel_usuario"))
 
-    # Carregar voos
+    # Carregar voo
     todos_voos = carregar_voos()
     voo = next((v for v in todos_voos if v["codigo"] == codigo), None)
 
@@ -647,10 +642,11 @@ def confirmar_voo(codigo):
         flash("Voo não encontrado!", "erro")
         return redirect(url_for("painel_usuario"))
 
-    # Registrar passageiros
     registros_para_csv = []
 
-    # O passageiro principal (responsável) é o cpf_usuario que acabamos de validar
+    # ====================================================================
+    # 1️⃣ Salvar RESPONSÁVEL (apenas 1 vez)
+    # ====================================================================
     passageiros_db.inserir_passageiro(
         cpf=cpf_usuario,
         voo=voo["codigo"],
@@ -660,10 +656,18 @@ def confirmar_voo(codigo):
     )
     registros_para_csv.append([cpf_usuario, voo["codigo"], voo["origem"], voo["destino"], voo["horario"]])
 
-    # passageiros adicionais (inclui o responsável novamente se ele estiver na lista, o que é seguro)
-    # Nota: Se o responsável já foi inserido acima, a BTree deve lidar com a duplicidade ou você pode
-    # decidir filtrar o responsável da lista 'passageiros_registrados' antes deste loop.
-    for p in passageiros_registrados:
+    # ====================================================================
+    # 2️⃣ Remover o responsável da lista → evita duplicação
+    # ====================================================================
+    passageiros_filtrados = [
+        p for p in passageiros_registrados
+        if p["cpf"] != cpf_usuario
+    ]
+
+    # ====================================================================
+    # 3️⃣ Salvar SOMENTE passageiros adicionais
+    # ====================================================================
+    for p in passageiros_filtrados:
         passageiros_db.inserir_passageiro(
             cpf=p["cpf"],
             voo=voo["codigo"],
@@ -671,43 +675,40 @@ def confirmar_voo(codigo):
             destino=voo["destino"],
             horario=voo["horario"]
         )
-        registros_para_csv.append([p["cpf"], voo["codigo"], voo["origem"], voo["destino"], voo["horario"]])
+        registros_para_csv.append([
+            p["cpf"], voo["codigo"], voo["origem"], voo["destino"], voo["horario"]
+        ])
 
     salvar_passageiros_csv(registros_para_csv)
 
-    # 1. quantidade de passageiros
-    # Contar o passageiro principal (cpf_usuario) + os passageiros adicionais
-    # Contagem corrigida para incluir todos os passageiros únicos.
-    qtd_passageiros = len(set(p["cpf"] for p in passageiros_registrados))
-    if cpf_usuario not in [p["cpf"] for p in passageiros_registrados]:
-        qtd_passageiros += 1
-    
-    # Para simplicidade e já que a lista 'passageiros_registrados' inclui o responsável:
-    # qtd_passageiros = len(passageiros_registrados) 
+    # ====================================================================
+    # 4️⃣ Contar passageiros corretamente (sem duplicar responsável)
+    # ====================================================================
+    qtd_passageiros = 1 + len(passageiros_filtrados)
 
-    # 2. atualizar assentos disponíveis
+    # ====================================================================
+    # 5️⃣ Atualizar assentos
+    # ====================================================================
     voo["assentos_disponiveis"] -= qtd_passageiros
 
-    # 3. salvar lista completa no arquivo
-    # A função salvar_voos aqui deve ser a que você definiu fora da rota
-    salvar_voos(todos_voos) 
-    
-    # remover voo da lista do usuário
+    salvar_voos(todos_voos)
+
+    # remove voo pendente
     meus_voos = session.get("meus_voos", [])
     meus_voos = [v for v in meus_voos if v["codigo"] != codigo]
     session["meus_voos"] = meus_voos
 
-    # ----------- CRIA O OBJETO DE CONFIRMAÇÃO -----------
+    # criar objeto confirmado
     voo_confirmado = voo.copy()
     voo_confirmado["usuario"] = usuario
     voo_confirmado["confirmado"] = True
 
-    # ----------- SALVAR EM ARQUIVO PERMANENTE -----------
+    # salvar definitivo
     voos_arquivo = carregar_voos_confirmados()
     voos_arquivo.append(voo_confirmado)
     salvar_voos_confirmados(voos_arquivo)
 
-    # ----------- SALVAR NA SESSÃO (opcional) -----------
+    # salvar pendente sessão
     voos_pendentes = session.get("voos_pendentes", [])
     voos_pendentes.append(voo_confirmado)
     session["voos_pendentes"] = voos_pendentes
@@ -718,8 +719,8 @@ def confirmar_voo(codigo):
 
     session.modified = True
     flash("Voo confirmado e passageiros registrados!", "sucesso")
-
     return redirect(url_for("painel_usuario"))
+
 
 # VOOS CONFIRMADOS E CANCELAMENTOS
 # -----------------------
@@ -756,7 +757,6 @@ def voos_confirmados():
 
     return render_template("voos_confirmados.html", voos=voos_usuario)
 
-
 @app.route("/remover_voo_confirmado/<codigo>", methods=["POST"])
 def remover_voo_confirmado(codigo):
 
@@ -764,24 +764,61 @@ def remover_voo_confirmado(codigo):
     if not usuario:
         return redirect(url_for("login_usuario"))
 
-    # Carregar voos
+    # Carregar voos confirmados
     voos = carregar_voos_confirmados()
 
-    # Criar nova lista sem o voo cancelado
+    # Remover voo daquele usuário
     voos_restante = []
     for v in voos:
         if (
             isinstance(v.get("usuario"), dict)
             and v["usuario"].get("nome") == usuario.get("nome")
-            and str(v.get("codigo")) == str(codigo)
+            and str(v.get("codigo")).strip() == str(codigo).strip()
         ):
-            continue  # este será removido
+            continue  # este voo será removido
         voos_restante.append(v)
 
     salvar_voos_confirmados(voos_restante)
 
-    flash("Voo cancelado com sucesso. Taxa de R$ 50,00 aplicada.", "warning")
+    # ==========================================================
+    # 🔥 Remover passageiros do CSV correto: arquivos/passageiros.csv
+    # ==========================================================
+
+    import csv
+    import os
+
+    caminho_csv = os.path.join("arquivos", "passageiros.csv")
+
+    linhas_restantes = []
+
+    # Ler arquivo e filtrar as linhas
+    try:
+        with open(caminho_csv, "r", newline="", encoding="utf-8") as arq:
+            leitor = csv.reader(arq)
+            for linha in leitor:
+
+                # Manter cabeçalho sempre
+                if linha == ["cpf", "voo", "origem", "destino", "horario"]:
+                    linhas_restantes.append(linha)
+                    continue
+
+                # linha[1] = código do voo no CSV
+                if len(linha) == 5 and linha[1].strip() != str(codigo).strip():
+                    linhas_restantes.append(linha)
+
+    except FileNotFoundError:
+        pass  # ainda não existe
+
+    # Reescreve o CSV SEM as linhas do voo removido
+    with open(caminho_csv, "w", newline="", encoding="utf-8") as arq:
+        escritor = csv.writer(arq)
+        escritor.writerows(linhas_restantes)
+    # ==========================================================
+
+    flash("Voo cancelado e passageiros removidos com sucesso. Taxa de R$ 50,00 aplicada.", "warning")
     return redirect(url_for("voos_confirmados"))
+
+
 
 # CONSULTA PÚBLICA DE VOOS (PÁGINA INICIAL)
 # -----------------------
