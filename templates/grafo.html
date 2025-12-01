@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Grafo de Rotas</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 80%;
+            margin: 20px auto;
+        }
+        th, td {
+            border: 1px solid #333;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        h1 {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Grafo de Rotas</h1>
+    <table>
+        <tr>
+            <th>Origem</th>
+            <th>Destino</th>
+            <th>Distância (km)</th>
+            <th>Preço</th>
+            <th>Código do Voo</th>
+        </tr>
+        {% for u, v, dados in edges %}
+        <tr>
+            <td>{{ nome_cidade(u) }}</td>
+            <td>{{ nome_cidade(v) }}</td>
+            <td>{{ "%.1f"|format(dados['peso']) }}</td>
+            <td>{{ dados['preco'] }}</td>
+            <td>{{ dados['codigo'] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <div style="text-align:center; margin-top:20px;">
+        <a href="/grafo_imagem">Ver grafo visual</a> |
+        <a href="/melhor_rota">Calcular melhor rota</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<html>
+    <head>
+        <meta charset="utf-8">
+        
+            <script src="lib/bindings/utils.js"></script>
+            <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/dist/vis-network.min.css" integrity="sha512-WgxfT5LWjfszlPHXRmBWHkV2eceiWTOBvrKCNbdgDYTHrT2AeLCGbF4sZlZw3UMN3WtL0tGUoIAKsu8mllg/XA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/dist/vis-network.min.js" integrity="sha512-LnvoEWDFrqGHlHmDD2101OrLcbsfkrzoSpvtSQtxK3RMnRV0eOkhhBN2dXHKRrUU8p2DGRTk35n4O8nWSVe1mQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+            
+        
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+        <link
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/css/bootstrap.min.css"
+          rel="stylesheet"
+          integrity="sha384-eOJMYsd53ii+scO/bJGFsiCZc+5NDVN2yr8+0RDqr0Ql0h+rP48ckxlpbzKgwra6"
+          crossorigin="anonymous"
+        />
+        <script
+          src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta3/dist/js/bootstrap.bundle.min.js"
+          integrity="sha384-JEW9xMcG8R+pH31jmWH6WWP0WintQrMb4s7ZOdauHnUtxwoG2vI5DkLtS3qm9Ekf"
+          crossorigin="anonymous"
+        ></script>
+
+
+        <center>
+          <h1></h1>
+        </center>
+        <style type="text/css">
+
+             #mynetwork {
+                 width: 100%;
+                 height: 750px;
+                 background-color: #FFFFFF;
+                 border: 1px solid lightgray;
+                 position: relative;
+                 float: left;
+             }
+
+             
+
+             
+
+             
+        </style>
+    </head>
+
+
+    <body>
+        <div class="card" style="width: 100%">
+            
+            
+            <div id="mynetwork" class="card-body"></div>
+        </div>
+
+        
+        
+
+        <script type="text/javascript">
+
+              // initialize global variables.
+              var edges;
+              var nodes;
+              var allNodes;
+              var allEdges;
+              var nodeColors;
+              var originalNodes;
+              var network;
+              var container;
+              var options, data;
+              var filter = {
+                  item : '',
+                  property : '',
+                  value : []
+              };
+
+              
+
+              
+
+              // This method is responsible for drawing the graph, returns the drawn network
+              function drawGraph() {
+                  var container = document.getElementById('mynetwork');
+
+                  
+
+                  // parsing and collecting nodes and edges from the python
+                  nodes = new vis.DataSet([{"color": "#97c2fc", "font": {"color": "black"}, "id": "MANAUS", "label": "MANAUS", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "GRU", "label": "GRU", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "BEL\u00c9M", "label": "BEL\u00c9M", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "RECIFE", "label": "RECIFE", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "FLORIAN\u00d3POLIS", "label": "FLORIAN\u00d3POLIS", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "GIG", "label": "GIG", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "NATAL", "label": "NATAL", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "BRAS\u00cdLIA", "label": "BRAS\u00cdLIA", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "MADRID (MAD)", "label": "MADRID (MAD)", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "FOZ DO IGUA\u00c7U", "label": "FOZ DO IGUA\u00c7U", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "SANTIAGO (SCL)", "label": "SANTIAGO (SCL)", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "CURITIBA", "label": "CURITIBA", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "FORTALEZA", "label": "FORTALEZA", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "PARIS (CDG)", "label": "PARIS (CDG)", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "BELO HORIZONTE", "label": "BELO HORIZONTE", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "VIT\u00d3RIA", "label": "VIT\u00d3RIA", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "ORLANDO (MCO)", "label": "ORLANDO (MCO)", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "PORTO ALEGRE", "label": "PORTO ALEGRE", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "SSA", "label": "SSA", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "MONTEVID\u00c9U (MVD)", "label": "MONTEVID\u00c9U (MVD)", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "MACEI\u00d3", "label": "MACEI\u00d3", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "S\u00c3O PAULO (GRU)", "label": "S\u00c3O PAULO (GRU)", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "LISBOA (LIS)", "label": "LISBOA (LIS)", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "BUENOS AIRES (EZE)", "label": "BUENOS AIRES (EZE)", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "NOVA YORK (JFK)", "label": "NOVA YORK (JFK)", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "DUBAI (DXB)", "label": "DUBAI (DXB)", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "RIO DE JANEIRO (GIG)", "label": "RIO DE JANEIRO (GIG)", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "MIAMI (MIA)", "label": "MIAMI (MIA)", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "LONDRES (LHR)", "label": "LONDRES (LHR)", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "GOI\u00c2NIA", "label": "GOI\u00c2NIA", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "CUIAB\u00c1", "label": "CUIAB\u00c1", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "S\u00c3O LU\u00cdS", "label": "S\u00c3O LU\u00cdS", "shape": "dot", "size": 10}, {"color": "#97c2fc", "font": {"color": "black"}, "id": "TERESINA", "label": "TERESINA", "shape": "dot", "size": 10}]);
+                  edges = new vis.DataSet([{"codigo": "ED250", "from": "MANAUS", "peso": 100.0, "preco": 890.9, "to": "GRU", "width": 1}, {"codigo": "ED800", "from": "MANAUS", "peso": 100.0, "preco": 1300.25, "to": "BEL\u00c9M", "width": 1}, {"codigo": "ED500", "from": "GRU", "peso": 100.0, "preco": 780.25, "to": "RECIFE", "width": 1}, {"codigo": "ED110", "from": "FLORIAN\u00d3POLIS", "peso": 100.0, "preco": 650.0, "to": "GIG", "width": 1}, {"codigo": "ED400", "from": "GIG", "peso": 100.0, "preco": 999.99, "to": "NATAL", "width": 1}, {"codigo": "ED205", "from": "RECIFE", "peso": 100.0, "preco": 720.55, "to": "BRAS\u00cdLIA", "width": 1}, {"codigo": "IN720", "from": "RECIFE", "peso": 100.0, "preco": 5900.0, "to": "MADRID (MAD)", "width": 1}, {"codigo": "ED605", "from": "BRAS\u00cdLIA", "peso": 100.0, "preco": 1150.0, "to": "FOZ DO IGUA\u00c7U", "width": 1}, {"codigo": "IN620", "from": "BRAS\u00cdLIA", "peso": 100.0, "preco": 3200.0, "to": "SANTIAGO (SCL)", "width": 1}, {"codigo": "ED178", "from": "CURITIBA", "peso": 100.0, "preco": 580.0, "to": "FORTALEZA", "width": 1}, {"codigo": "ED410", "from": "FORTALEZA", "peso": 100.0, "preco": 540.0, "to": "BEL\u00c9M", "width": 1}, {"codigo": "IN610", "from": "FORTALEZA", "peso": 100.0, "preco": 6800.0, "to": "PARIS (CDG)", "width": 1}, {"codigo": "ED099", "from": "BELO HORIZONTE", "peso": 100.0, "preco": 510.75, "to": "VIT\u00d3RIA", "width": 1}, {"codigo": "IN805", "from": "BELO HORIZONTE", "peso": 100.0, "preco": 4800.0, "to": "ORLANDO (MCO)", "width": 1}, {"codigo": "ED300", "from": "PORTO ALEGRE", "peso": 100.0, "preco": 455.5, "to": "SSA", "width": 1}, {"codigo": "IN715", "from": "PORTO ALEGRE", "peso": 100.0, "preco": 1990.0, "to": "MONTEVID\u00c9U (MVD)", "width": 1}, {"codigo": "ED615", "from": "SSA", "peso": 100.0, "preco": 880.75, "to": "MACEI\u00d3", "width": 1}, {"codigo": "IN550", "from": "S\u00c3O PAULO (GRU)", "peso": 100.0, "preco": 4550.8, "to": "LISBOA (LIS)", "width": 1}, {"codigo": "IN601", "from": "S\u00c3O PAULO (GRU)", "peso": 100.0, "preco": 1850.5, "to": "BUENOS AIRES (EZE)", "width": 1}, {"codigo": "IN625", "from": "S\u00c3O PAULO (GRU)", "peso": 100.0, "preco": 7100.9, "to": "NOVA YORK (JFK)", "width": 1}, {"codigo": "IN810", "from": "S\u00c3O PAULO (GRU)", "peso": 100.0, "preco": 8500.0, "to": "DUBAI (DXB)", "width": 1}, {"codigo": "IN555", "from": "RIO DE JANEIRO (GIG)", "peso": 100.0, "preco": 5200.0, "to": "MIAMI (MIA)", "width": 1}, {"codigo": "IN705", "from": "RIO DE JANEIRO (GIG)", "peso": 100.0, "preco": 6550.0, "to": "LONDRES (LHR)", "width": 1}, {"codigo": "ED700", "from": "GOI\u00c2NIA", "peso": 100.0, "preco": 690.0, "to": "CUIAB\u00c1", "width": 1}, {"codigo": "ED710", "from": "S\u00c3O LU\u00cdS", "peso": 100.0, "preco": 350.0, "to": "TERESINA", "width": 1}]);
+
+                  nodeColors = {};
+                  allNodes = nodes.get({ returnType: "Object" });
+                  for (nodeId in allNodes) {
+                    nodeColors[nodeId] = allNodes[nodeId].color;
+                  }
+                  allEdges = edges.get({ returnType: "Object" });
+                  // adding nodes and edges to the graph
+                  data = {nodes: nodes, edges: edges};
+
+                  var options = {
+    "configure": {
+        "enabled": false
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": true,
+            "type": "dynamic"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "forceAtlas2Based": {
+            "avoidOverlap": 0,
+            "centralGravity": 0.005,
+            "damping": 0.4,
+            "gravitationalConstant": -30,
+            "springConstant": 0.08,
+            "springLength": 180
+        },
+        "solver": "forceAtlas2Based",
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+
+                  
+
+
+                  
+
+                  network = new vis.Network(container, data, options);
+
+                  
+
+                  
+
+                  
+
+
+                  
+
+                  return network;
+
+              }
+              drawGraph();
+        </script>
+    </body>
+</html>
