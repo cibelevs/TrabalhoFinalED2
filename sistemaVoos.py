@@ -6,13 +6,18 @@ from flask import Flask, json, render_template, request, redirect, session, url_
 from passageiros_btree import PassageirosBTree 
 import pandas as pd
 
-app = Flask(__name__)
-app.secret_key = "sua_chave_secreta_aqui"  # pode ser qualquer string
 
+app = Flask(__name__)
+app.secret_key = "sua_chave_secreta_aqui"  
+
+# Inicialização da árvore B para passageiros
 passageiros_db = PassageirosBTree(ordem=3)
 passageiros_db.carregar_csv("arquivos/passageiros.csv")
 
-# --- Função para carregar voos do arquivo dentro da pasta 'arquivos' ---
+# FUNÇÕES DE PERSISTÊNCIA DE DADOS
+# -----------------------
+
+# --- Funções para manipulação de voos ---
 def carregar_voos():
     try:
         caminho = os.path.join("arquivos", "listaVoos.text")
@@ -28,7 +33,6 @@ def carregar_voos():
 
             voos = ast.literal_eval(conteudo)
 
-            # 🔥 Normalizar chaves antigas
             for v in voos:
 
                 # Caso tenha "assentos" → vira assentos_totais
@@ -45,7 +49,7 @@ def carregar_voos():
         print(f"Erro ao carregar voos: {e}")
         return []
 
-# --- Função auxiliar para salvar os voos ---
+
 def salvar_voos(voos):
     try:
         caminho = os.path.join("arquivos", "listaVoos.text")
@@ -55,6 +59,7 @@ def salvar_voos(voos):
         print(f"Erro ao salvar voos: {e}")
 
 
+# --- Funções para manipulação de usuários ---
 def carregar_usuarios():
     try:
         caminho = os.path.join("arquivos", "usuarios.text")
@@ -68,6 +73,7 @@ def carregar_usuarios():
         print(f"Erro ao carregar usuários: {e}")
         return []
 
+
 def salvar_usuarios(usuarios):
     try:
         caminho = os.path.join("arquivos", "usuarios.text")
@@ -77,9 +83,54 @@ def salvar_usuarios(usuarios):
         print(f"Erro ao salvar usuários: {e}")
 
 
+# --- Funções para voos confirmados ---
+def carregar_voos_confirmados():
+    if not os.path.exists("arquivos/voos_confirmados.json"):
+        return []
+
+    with open("arquivos/voos_confirmados.json", "r", encoding="utf-8") as f:
+        try:
+            return json.load(f)
+        except:
+            return []
+
+
+def salvar_voos_confirmados(lista):
+    with open("arquivos/voos_confirmados.json", "w", encoding="utf-8") as f:
+        json.dump(lista, f, ensure_ascii=False, indent=4)
+
+
+# --- Funções para passageiros ---
+def carregar_passageiros():
+    df = pd.read_csv("arquivos/passageiros.csv")
+    df = df.fillna("")  # evita NaN -> Undefined no template
+    return df.to_dict(orient="records")
+
+
+def salvar_passageiros_csv(linhas):
+    caminho = os.path.join("arquivos", "passageiros.csv")
+
+    arquivo_existe = os.path.exists(caminho)
+
+    with open(caminho, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+
+        # escrever cabeçalho se o arquivo está vazio
+        if not arquivo_existe:
+            writer.writerow(["cpf", "voo", "origem", "destino", "horario"])
+
+        # grava cada passageiro confirmado
+        for linha in linhas:
+            writer.writerow(linha)
+
+
+# ROTAS DE AUTENTICAÇÃO E CADASTRO
+# -----------------------
+
 @app.route('/cadastro')
 def cadastro():
     return render_template('cadastro.html')
+
 
 @app.route('/registrar', methods=['POST'])
 def registrar():
@@ -95,9 +146,11 @@ def registrar():
     salvar_usuarios(usuarios)
     return render_template('login_usuario.html', sucesso="Conta criada com sucesso! Faça login.")
 
+
 @app.route('/login_usuario')
 def login_usuario():
     return render_template('login_usuario.html')
+
 
 @app.route('/login_usuario', methods=['POST'])
 def login_usuario_post():
@@ -125,6 +178,7 @@ def login_usuario_post():
 def tela_usuario():
     return render_template('acesso_adm.html')
 
+
 # --- Login simples para administrador ---
 @app.route('/login', methods=['POST'])
 def login():
@@ -144,17 +198,135 @@ def login():
         <div style='text-align:center;'><a href='/' style='color:#ff7b00;'>Voltar</a></div>
         """
 
-# --- Painel do administrador ---
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("index"))   # Volta para o menu
+
+# ROTAS DO PAINEL ADMINISTRATIVO
+# -----------------------
+
 @app.route('/painel_admin')
 def painel_admin():
     voos = carregar_voos()
     return render_template('pag_adm.html', voos=voos)
 
 
-def carregar_passageiros():
-    df = pd.read_csv("arquivos/passageiros.csv")
-    df = df.fillna("")  # evita NaN -> Undefined no template
-    return df.to_dict(orient="records")
+@app.route('/adicionar_voo', methods=['POST'])
+def adicionar_voo():
+    codigo = request.form.get('codigo')
+    origem = request.form.get('origem')
+    destino = request.form.get('destino')
+    preco_str = request.form.get('preco')
+    data = request.form.get('data')
+    horario = request.form.get('horario')
+    assentos_totais_str = request.form.get('assentos_totais')
+
+    try:
+        preco = float(preco_str)
+        assentos_totais = int(assentos_totais_str)
+    except:
+        flash("Preço ou assentos inválidos.", "erro")
+        return redirect(url_for('painel_admin'))
+
+    voos = carregar_voos()
+
+    # Impedir duplicação
+    if any(voo["codigo"] == codigo for voo in voos):
+        flash(f"O código '{codigo}' já está em uso.", "erro")
+        return redirect(url_for('painel_admin'))
+
+    # Adicionar novo voo
+    voos.append({
+        "codigo": codigo,
+        "origem": origem,
+        "destino": destino,
+        "preco": preco,
+        "data": data,
+        "horario": horario,
+        "assentos_totais": assentos_totais,
+        "assentos_disponiveis": assentos_totais
+    })
+
+    salvar_voos(voos)
+
+    flash("Voo adicionado com sucesso!", "sucesso")
+    return redirect(url_for('painel_admin'))
+
+
+@app.route('/remover_voo', methods=['POST'])
+def remover_voo():
+    origem = request.form.get('origem', '').strip().lower()
+    destino = request.form.get('destino', '').strip().lower()
+
+    voos = carregar_voos()
+    voos_antes = len(voos)
+
+    # Remove voo por origem e destino (ignorando maiúsculas/minúsculas)
+    voos = [v for v in voos if not (
+        v["origem"].strip().lower() == origem and 
+        v["destino"].strip().lower() == destino
+    )]
+
+    salvar_voos(voos)
+    
+    if len(voos) < voos_antes:
+        flash("Voo removido com sucesso!", "sucesso")
+    else:
+        flash("Nenhum voo encontrado com essa origem e destino.", "erro")
+
+    return redirect(url_for('voos'))
+
+
+@app.route('/salvar_edicao', methods=['POST'])
+def salvar_edicao():
+    codigo = request.form.get('codigo')
+    origem = request.form.get('origem')
+    destino = request.form.get('destino')
+    preco_str = request.form.get('preco')
+    data = request.form.get('data')
+    horario = request.form.get('horario')
+    assentos_totais_str = request.form.get('assentos_totais')
+
+    try:
+        preco = float(preco_str)
+        assentos_totais = int(assentos_totais_str)
+    except:
+        voos = carregar_voos()
+        return render_template('consulta_voos.html', error="Preço ou assentos inválidos.", voos=voos)
+
+    voos = carregar_voos()
+
+    voo_atual = None
+
+    for voo in voos:
+        if voo["codigo"] == codigo:
+            voo["origem"] = origem
+            voo["destino"] = destino
+            voo["preco"] = preco
+            voo["data"] = data
+            voo["horario"] = horario
+
+            diferenca = assentos_totais - voo.get("assentos_totais", 0)
+            voo["assentos_totais"] = assentos_totais
+            voo["assentos_disponiveis"] = max(0, voo.get("assentos_disponiveis", 0) + diferenca)
+
+            voo_atual = voo
+            break
+
+    salvar_voos(voos)
+
+    return render_template(
+        'voos.html',
+        voos=voos,
+        abrir_modal=True,
+        voo_atual=voo_atual
+    )
+
+# ROTAS DO PAINEL DO USUÁRIO
+# -----------------------
+
 
 @app.route("/painel_usuario")
 def painel_usuario():
@@ -189,13 +361,11 @@ def painel_usuario():
     )
 
 
-
 # --- Página de consulta de voos pelo usuario ---
 def carregar_meus_voos():
     if "meus_voos" not in session:
         session["meus_voos"] = []
     return session["meus_voos"]
-
 
 
 @app.route("/adicionar_voos_usuario")
@@ -221,7 +391,6 @@ def adicionar_voos_usuario():
         passageiros_existentes=passageiros_existentes,
         codigo=codigo
     )
-
 
 
 def adicionar_voo_usuario(codigo_voo):
@@ -260,6 +429,7 @@ def adicionar_voo_usuario(codigo_voo):
     session["meus_voos"] = meus_voos
     session.modified = True
     return True
+
 
 @app.route("/remover_passageiro/<codigo>", methods=["POST"])
 def remover_passageiro(codigo):
@@ -331,9 +501,8 @@ def buscar_voos_usuario():
 def adicionar_ao_carrinho(codigo):
     adicionar_voo_usuario(codigo)
     flash("Voo adicionado aos seus voos!", "sucesso")
-
-    
     return redirect(url_for("painel_usuario"))
+
 
 @app.post("/remover_do_carrinho/<codigo>")
 def remover_do_carrinho(codigo):
@@ -341,74 +510,8 @@ def remover_do_carrinho(codigo):
     flash("Voo removido dos seus voos.", "sucesso")
     return redirect(url_for("painel_usuario"))
 
-
-# --- Página de consulta de voos pelo adm ---
-@app.route('/voos')
-def voos_usuario():
-    # Pega parâmetros de busca
-    origem_busca = request.args.get('origem', '').lower()
-    destino_busca = request.args.get('destino', '').lower()
-
-    voos = carregar_voos()
-
-    # Filtra voos se houver pesquisa
-    if origem_busca or destino_busca:
-        voos = [
-            v for v in voos
-            if origem_busca in v['origem'].lower() and destino_busca in v['destino'].lower()
-        ]
-
-    return render_template('voos.html', voos=voos, origem=origem_busca, destino=destino_busca)
-
-
-@app.route('/voos')
-def voos():
-    return render_template('voos.html', voos=voos)
-
-
-# --- Adicionar voo ---
-
-@app.route('/adicionar_voo', methods=['POST'])
-def adicionar_voo():
-    codigo = request.form.get('codigo')
-    origem = request.form.get('origem')
-    destino = request.form.get('destino')
-    preco_str = request.form.get('preco')
-    data = request.form.get('data')
-    horario = request.form.get('horario')
-    assentos_totais_str = request.form.get('assentos_totais')
-
-    try:
-        preco = float(preco_str)
-        assentos_totais = int(assentos_totais_str)
-    except:
-        flash("Preço ou assentos inválidos.", "erro")
-        return redirect(url_for('painel_admin'))
-
-    voos = carregar_voos()
-
-    # Impedir duplicação
-    if any(voo["codigo"] == codigo for voo in voos):
-        flash(f"O código '{codigo}' já está em uso.", "erro")
-        return redirect(url_for('painel_admin'))
-
-    # Adicionar novo voo
-    voos.append({
-        "codigo": codigo,
-        "origem": origem,
-        "destino": destino,
-        "preco": preco,
-        "data": data,
-        "horario": horario,
-        "assentos_totais": assentos_totais,
-        "assentos_disponiveis": assentos_totais
-    })
-
-    salvar_voos(voos)
-
-    flash("Voo adicionado com sucesso!", "sucesso")
-    return redirect(url_for('painel_admin'))
-
+# GESTÃO DE PASSAGEIROS POR VOO
+# -----------------------
 
 # usuario seleciona voo
 @app.route("/selecionar_voo/<codigo>")
@@ -424,123 +527,7 @@ def selecionar_voo(codigo):
 
     return redirect(url_for("adicionar_voos_usuario"))
 
-# usuario adiciona voos
-def adicionar_voo_usuario(codigo_voo):
-    usuario = session.get("usuario_logado")
-    if not usuario:
-        return False
 
-    todos = carregar_voos()
-    voo = next((v for v in todos if v["codigo"] == codigo_voo), None)
-
-    if not voo:
-        return False
-
-    meus_voos = session.get("meus_voos", [])
-
-    # Já adicionado?
-    for v in meus_voos:
-        if v.get("codigo") == voo["codigo"] and v.get("usuario") == usuario:
-            return True
-
-    novo_voo = {
-        "codigo": voo["codigo"],
-        "origem": voo["origem"],
-        "destino": voo["destino"],
-        "data": voo["data"],
-        "horario": voo["horario"],
-        "preco": voo["preco"],
-        "assentos_totais": voo["assentos_totais"],
-        "assentos_disponiveis": voo["assentos_disponiveis"],
-        "usuario": usuario,
-        "confirmado": False,
-        "passageiros": []
-    }
-
-    meus_voos.append(novo_voo)
-    session["meus_voos"] = meus_voos
-    session.modified = True
-    return True
-
-
-def carregar_voos_confirmados():
-    if not os.path.exists("arquivos/voos_confirmados.json"):
-        return []
-
-    with open("arquivos/voos_confirmados.json", "r", encoding="utf-8") as f:
-        try:
-            return json.load(f)
-        except:
-            return []
-
-
-
-
-def salvar_voos_confirmados(lista):
-    with open("arquivos/voos_confirmados.json", "w", encoding="utf-8") as f:
-        json.dump(lista, f, ensure_ascii=False, indent=4)
-
-
-@app.route("/voos_confirmados")
-@app.route("/voos_confirmados")
-def voos_confirmados():
-
-    usuario = session.get("usuario_logado")
-    if not usuario:
-        return redirect(url_for("login_usuario"))
-
-    voos_arquivo = carregar_voos_confirmados()
-    voos_usuario = []
-
-    for v in voos_arquivo:
-
-        # Pega só os voos desse usuário
-        if isinstance(v.get("usuario"), dict) and v["usuario"].get("nome") == usuario.get("nome"):
-
-            preco = float(v.get("preco", 0))
-
-            # Criar lista de passageiros corretamente
-            if isinstance(v.get("usuario"), dict):
-                passageiros = [v["usuario"]["nome"]]
-            else:
-                passageiros = []
-
-            v["passageiros_lista"] = passageiros
-            v["total_viagem"] = preco * len(passageiros)
-
-            voos_usuario.append(v)
-
-    return render_template("voos_confirmados.html", voos=voos_usuario)
-
-
-@app.route("/remover_voo_confirmado/<codigo>", methods=["POST"])
-def remover_voo_confirmado(codigo):
-
-    usuario = session.get("usuario_logado")
-    if not usuario:
-        return redirect(url_for("login_usuario"))
-
-    # Carregar voos
-    voos = carregar_voos_confirmados()
-
-    # Criar nova lista sem o voo cancelado
-    voos_restante = []
-    for v in voos:
-        if (
-            isinstance(v.get("usuario"), dict)
-            and v["usuario"].get("nome") == usuario.get("nome")
-            and str(v.get("codigo")) == str(codigo)
-        ):
-            continue  # este será removido
-        voos_restante.append(v)
-
-    salvar_voos_confirmados(voos_restante)
-
-    flash("Voo cancelado com sucesso. Taxa de R$ 50,00 aplicada.", "warning")
-    return redirect(url_for("voos_confirmados"))
-
-
-# confirma passageiros do usuario
 @app.route("/confirmar_passageiros", methods=["POST"])
 def confirmar_passageiros():
     usuario = session.get("usuario_logado")
@@ -550,7 +537,6 @@ def confirmar_passageiros():
         flash("Erro: voo ou usuário não encontrados.", "danger")
         return redirect(url_for("painel_usuario"))
 
-    # CPF do responsável
     cpf_responsavel = request.form.get("cpf_responsavel", "").replace(".", "").replace("-", "")
 
     if not cpf_responsavel or len(cpf_responsavel) != 11:
@@ -570,38 +556,29 @@ def confirmar_passageiros():
         if p["cpf"] in cpf_existentes
     ]
 
-    # ================================
-    # 🔥 FILTRO IMPORTANTE:
+   
     # remover o usuário logado da lista (não deve aparecer como passageiro)
-    # ================================
     passageiros_atualizados = [
         p for p in passageiros_atualizados
         if p["nome"].strip().lower() != usuario.strip().lower()
     ]
-    # ================================
-
-
-    # adicionar o responsável com NOME COMPLETO
     nome_responsavel = request.form.get("nome_responsavel")
 
     if not nome_responsavel:
         flash("O nome completo do responsável é obrigatório.", "danger")
         return redirect(url_for("adicionar_voos_usuario"))
 
-    # garantir que o responsável só entre UMA vez
     passageiros_atualizados = [
         p for p in passageiros_atualizados
         if p.get("tipo") != "responsavel"
     ]
 
-    # adicionar responsável
     passageiros_atualizados.append({
         "nome": nome_responsavel,
         "cpf": cpf_responsavel,
         "tipo": "responsavel"
     })
 
-    # novos passageiros
     nomes = request.form.getlist("novo_nome[]")
     cpfs = request.form.getlist("novo_cpf[]")
     tipos = request.form.getlist("novo_tipo[]")
@@ -622,13 +599,8 @@ def confirmar_passageiros():
     flash("Passageiros atualizados com sucesso!", "success")
     return redirect(url_for("adicionar_voos_usuario"))
 
-
-
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("index"))   # Volta para o menu
+# CONFIRMAÇÃO DE VOOS E REGISTRO DE PASSAGEIROS
+# -----------------------
 
 
 @app.route("/confirmar_voo/<codigo>", methods=["POST"])
@@ -707,8 +679,6 @@ def confirmar_voo(codigo):
     # 4. atualizar arquivo
     salvar_voos(todos_voos)
 
-
-
     # remover voo da lista do usuário
     meus_voos = session.get("meus_voos", [])
     meus_voos = [v for v in meus_voos if v["codigo"] != codigo]
@@ -738,96 +708,92 @@ def confirmar_voo(codigo):
 
     return redirect(url_for("painel_usuario"))
 
+# VOOS CONFIRMADOS E CANCELAMENTOS
+# -----------------------
 
 
+@app.route("/voos_confirmados")
+@app.route("/voos_confirmados")
+def voos_confirmados():
 
-def salvar_passageiros_csv(linhas):
-    caminho = os.path.join("arquivos", "passageiros.csv")
+    usuario = session.get("usuario_logado")
+    if not usuario:
+        return redirect(url_for("login_usuario"))
 
-    arquivo_existe = os.path.exists(caminho)
+    voos_arquivo = carregar_voos_confirmados()
+    voos_usuario = []
 
-    with open(caminho, "a", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
+    for v in voos_arquivo:
 
-        # escrever cabeçalho se o arquivo está vazio
-        if not arquivo_existe:
-            writer.writerow(["cpf", "voo", "origem", "destino", "horario"])
+        # Pega só os voos desse usuário
+        if isinstance(v.get("usuario"), dict) and v["usuario"].get("nome") == usuario.get("nome"):
 
-        # grava cada passageiro confirmado
-        for linha in linhas:
-            writer.writerow(linha)
+            preco = float(v.get("preco", 0))
+
+            # Criar lista de passageiros corretamente
+            if isinstance(v.get("usuario"), dict):
+                passageiros = [v["usuario"]["nome"]]
+            else:
+                passageiros = []
+
+            v["passageiros_lista"] = passageiros
+            v["total_viagem"] = preco * len(passageiros)
+
+            voos_usuario.append(v)
+
+    return render_template("voos_confirmados.html", voos=voos_usuario)
 
 
-# --- Remover Voo ---
-@app.route('/remover_voo', methods=['POST'])
-def remover_voo():
-    origem = request.form.get('origem', '').strip().lower()
-    destino = request.form.get('destino', '').strip().lower()
+@app.route("/remover_voo_confirmado/<codigo>", methods=["POST"])
+def remover_voo_confirmado(codigo):
+
+    usuario = session.get("usuario_logado")
+    if not usuario:
+        return redirect(url_for("login_usuario"))
+
+    # Carregar voos
+    voos = carregar_voos_confirmados()
+
+    # Criar nova lista sem o voo cancelado
+    voos_restante = []
+    for v in voos:
+        if (
+            isinstance(v.get("usuario"), dict)
+            and v["usuario"].get("nome") == usuario.get("nome")
+            and str(v.get("codigo")) == str(codigo)
+        ):
+            continue  # este será removido
+        voos_restante.append(v)
+
+    salvar_voos_confirmados(voos_restante)
+
+    flash("Voo cancelado com sucesso. Taxa de R$ 50,00 aplicada.", "warning")
+    return redirect(url_for("voos_confirmados"))
+
+# CONSULTA PÚBLICA DE VOOS (PÁGINA INICIAL)
+# -----------------------
+
+@app.route('/voos')
+def voos_usuario():
+    # Pega parâmetros de busca
+    origem_busca = request.args.get('origem', '').lower()
+    destino_busca = request.args.get('destino', '').lower()
 
     voos = carregar_voos()
-    voos_antes = len(voos)
 
-    # Remove voo por origem e destino (ignorando maiúsculas/minúsculas)
-    voos = [v for v in voos if not (
-        v["origem"].strip().lower() == origem and 
-        v["destino"].strip().lower() == destino
-    )]
+    # Filtra voos se houver pesquisa
+    if origem_busca or destino_busca:
+        voos = [
+            v for v in voos
+            if origem_busca in v['origem'].lower() and destino_busca in v['destino'].lower()
+        ]
 
-    salvar_voos(voos)
-    
-    if len(voos) < voos_antes:
-        flash("Voo removido com sucesso!", "sucesso")
-    else:
-        flash("Nenhum voo encontrado com essa origem e destino.", "erro")
-
-    return redirect(url_for('voos'))
+    return render_template('voos.html', voos=voos, origem=origem_busca, destino=destino_busca)
 
 
-@app.route('/salvar_edicao', methods=['POST'])
-def salvar_edicao():
-    codigo = request.form.get('codigo')
-    origem = request.form.get('origem')
-    destino = request.form.get('destino')
-    preco_str = request.form.get('preco')
-    data = request.form.get('data')
-    horario = request.form.get('horario')
-    assentos_totais_str = request.form.get('assentos_totais')
-
-    try:
-        preco = float(preco_str)
-        assentos_totais = int(assentos_totais_str)
-    except:
-        voos = carregar_voos()
-        return render_template('consulta_voos.html', error="Preço ou assentos inválidos.", voos=voos)
-
-    voos = carregar_voos()
-
-    voo_atual = None
-
-    for voo in voos:
-        if voo["codigo"] == codigo:
-            voo["origem"] = origem
-            voo["destino"] = destino
-            voo["preco"] = preco
-            voo["data"] = data
-            voo["horario"] = horario
-
-            diferenca = assentos_totais - voo.get("assentos_totais", 0)
-            voo["assentos_totais"] = assentos_totais
-            voo["assentos_disponiveis"] = max(0, voo.get("assentos_disponiveis", 0) + diferenca)
-
-            voo_atual = voo
-            break
-
-    salvar_voos(voos)
-
-    return render_template(
-        'voos.html',
-        voos=voos,
-        abrir_modal=True,
-        voo_atual=voo_atual
-    )
-
+@app.route('/voos')
+def voos():
+    return render_template('voos.html', voos=voos)
 
 
 @app.route("/", methods=["GET"])
@@ -845,14 +811,11 @@ def index():
 
     return render_template("menu.html", origem=origem, destino=destino, voos=voos)
 
-# --- Executa o app ---
+
+# ROTAS PARA ARVORE B (PASSAGEIROS) - PAINEL DO ADM
+# -----------------------
 
 
-
-
-# --- ---------------------  ARVORE B  ------------------------------ 
-# ------------------------------------------------------------
-# ------------------------------------------------------------
 # PAINEL DO ADM — LISTAR PASSAGEIROS POR VOO
 
 # --- ROTAS PARA BUSCA / LISTAGEM DE PASSAGEIROS (BTree) ---
@@ -868,6 +831,10 @@ def buscar_passageiro_cpf():
 def listar_passageiros():
     lista = passageiros_db.listar_ordenado()  # retorna [(cpf, passageiro_obj), ...]
     return render_template('listar_passageiros.html', passageiros=lista)
+
+
+# EXECUÇÃO DO APLICATIVO
+# -----------------------
 
 if __name__ == '__main__':
     app.run(debug=True)
