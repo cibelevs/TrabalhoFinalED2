@@ -1,1 +1,1 @@
-Usuarios = [{'nome': 'alber', 'senha': '1234'}, {'nome': 'cibele', 'senha': 'abc'}, {'nome': 'abcde', 'senha': 'lalala'}]
+Usuarios = [{'nome': 'alber', 'senha': '1234'}, {'nome': 'cibele', 'senha': 'abc'}, {'nome': 'abcde', 'senha': 'lalala'}, {'nome': 'maria', 'senha': 'mar'}]

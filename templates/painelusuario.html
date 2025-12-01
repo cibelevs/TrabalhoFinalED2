@@ -262,14 +262,15 @@
                                 <i class="fa-solid fa-pen"></i>
                             </button>
                         </form>
+                    <!-- BOTÃO SEGURO: usa data-attributes e chama abrirModalConfirmacao(this) -->
+                    <button class="btn btn-outline-success btn-sm rounded-pill px-3"
+                            data-codigo="{{ voo.codigo }}"
+                            data-preco="{{ '%.2f' % (voo.preco|float) }}"
+                            data-qtd="{{ session.get('passageiros_voo', {}).get(voo.codigo, []) | length }}"
+                            onclick="abrirModalConfirmacao(this)">
+                        <i class="fa-solid fa-check"></i>
+                    </button>
 
-                        <button class="btn btn-outline-success btn-sm rounded-pill px-3"
-                            onclick="abrirModalConfirmacao('{{ voo.codigo }}',
-                                                          {{ voo.preco }},
-                                                          {{ passageiros_sessao[voo.codigo] if voo.codigo in passageiros_sessao else []
-|length }})">
-                            <i class="fa-solid fa-check"></i>
-                        </button>
 
                     </td>
                 </tr>
@@ -304,90 +305,120 @@
     </p>
 </footer>
 
-<!-- Modal (APENAS 1) -->
-<div class="modal fade" id="modalConfirmarVoo" tabindex="-1">
+<!-- MODAL CONFIRMAR VOO (ESTILO LARANJA) -->
+<div class="modal fade" id="modalConfirmarVoo" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content shadow-lg border-0" style="border-radius: 20px;">
-      <div class="modal-header bg-warning bg-gradient text-dark" style="border-radius: 20px 20px 0 0;">
-        <h5 class="modal-title fw-bold">
-          <i class="fa-solid fa-circle-exclamation me-2"></i> Confirmar Compra
+    <div class="modal-content" style="border-top: 5px solid var(--laranja); border-radius: 15px;">
+
+      <div class="modal-header" style="background: var(--cinza-claro); border-radius: 15px 15px 0 0;">
+        <h5 class="modal-title" style="color: var(--laranja-escuro); font-weight: 700;">
+            Confirmar Compra
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
 
-      <div class="modal-body text-center py-4">
-          <h5 class="fw-bold mb-3">Tem certeza que deseja confirmar?</h5>
+      <div class="modal-body">
 
-          <p class="mb-1"><strong>Preço por passageiro:</strong> R$ <span id="modalPreco"></span></p>
-          <p class="mb-1"><strong>Passageiros adicionados:</strong> <span id="modalQtd"></span></p>
+        <p><strong>Preço individual:</strong> R$ <span id="modalPreco">0.00</span></p>
+        <p><strong>Quantidade de passageiros:</strong> <span id="modalQtd">0</span></p>
+        <p style="font-size: 1.2rem; font-weight:700;">
+            Total a pagar: R$ <span id="modalTotal">0.00</span>
+        </p>
 
-          <div id="modalListaNomes" class="mt-2"></div>
+        <hr>
 
-          <h4 class="fw-bold text-success mt-3">
-              Total: R$ <span id="modalTotal"></span>
-          </h4>
+        <div id="modalListaNomes" style="line-height: 1.8;"></div>
+
       </div>
 
-      <div class="modal-footer">
-          <button class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
-          <form id="formConfirmarVoo" action="" method="POST">
-               <input type="hidden" name="cpf_usuario"
-           value="{{ session.get('passageiros_responsavel', {}).get(voo_codigo_atual, '') }}">
-            <button class="btn btn-success rounded-pill px-4 fw-bold">Confirmar</button>
-          </form>
+      <div class="modal-footer" style="background: var(--cinza-claro); border-radius: 0 0 15px 15px;">
+        <form id="formConfirmarVoo" method="POST">
+            <input type="hidden" name="cpf_usuario">
+            <button type="submit" class="btn btn-laranja px-4">Confirmar</button>
+        </form>
+        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Cancelar</button>
       </div>
 
     </div>
   </div>
 </div>
 
+
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
+
 <script>
-    window.passageiros = {{ passageiros_sessao | tojson | safe }};
-    window.responsaveis = {{ session.get('passageiros_responsavel', {}) | tojson | safe }};
+    window.passageiros = {{ session.get("passageiros_voo", {}) | tojson }};
+    window.responsaveis = {{ session.get("responsaveis_cpf", {}) | tojson }};
+    window.responsaveis_nomes = {{ session.get("responsaveis_nomes", {}) | tojson }};
+
+    window.usuario = {
+        nome: "{{ session.get('usuario_logado')['nome'] }}",
+        cpf: "{{ session.get('usuario_logado')['cpf'] }}"
+    };
 </script>
 
+
 <script>
-function abrirModalConfirmacao(codigo, preco, qtd) {
-    document.getElementById("modalPreco").innerText = preco.toFixed(2);
-    document.getElementById("modalQtd").innerText = qtd;
-    document.getElementById("modalTotal").innerText = (preco * qtd).toFixed(2);
+function abrirModalConfirmacao(btn) {
 
-    const passageiros = window.passageiros[codigo] || [];
+    const codigo = btn.dataset.codigo;
+    const preco = parseFloat(btn.dataset.preco) || 0;
 
-    let html = "<strong>Passageiros:</strong><br>";
-    if (passageiros.length === 0) {
-        html += "<em>Nenhum passageiro cadastrado.</em>";
-    } else {
-        passageiros.forEach(p => html += `• ${p.nome}<br>`);
+    // passageiros EXCLUINDO responsável
+    let passageirosAdicionais = (window.passageiros[codigo] || []).filter(p => {
+        return p.tipo !== "responsavel";
+    });
+
+    // ---- LISTA FINAL ----
+    const listaCompleta = [];
+
+    // pegar nome do responsável salvo na sessão
+    let nomeResponsavel = window.responsaveis_nomes?.[codigo] || null;
+
+    // se não tiver, usa o nome completo do usuário logado
+    if (!nomeResponsavel) {
+        nomeResponsavel = window.usuario?.nome || "Responsável";
     }
 
+    listaCompleta.push({
+        nome: nomeResponsavel,
+        cpf: window.responsaveis?.[codigo] || window.usuario?.cpf || "",
+        tipo: "responsavel"
+    });
+
+    // adicionar os demais passageiros
+    listaCompleta.push(...passageirosAdicionais);
+
+    // ---- preenche modal ----
+    document.getElementById("modalPreco").innerText = preco.toFixed(2);
+    document.getElementById("modalQtd").innerText = listaCompleta.length;
+    document.getElementById("modalTotal").innerText = (preco * listaCompleta.length).toFixed(2);
+
+    // lista de nomes
+    let html = "<strong>Passageiros:</strong><br>";
+    listaCompleta.forEach(p => {
+        html += `• ${p.nome}<br>`;
+    });
     document.getElementById("modalListaNomes").innerHTML = html;
 
-    document.getElementById("formConfirmarVoo").action = "/confirmar_voo/" + codigo;
+    // configurar o form
+    const form = document.getElementById("formConfirmarVoo");
+    form.action = "/confirmar_voo/" + codigo;
 
+    // enviar CPF do responsável
+    form.querySelector('input[name="cpf_usuario"]').value =
+        window.responsaveis?.[codigo] || window.usuario?.cpf || "";
 
-    document.getElementById("formConfirmarVoo").action = "/confirmar_voo/" + codigo;
-
-    // garantir hidden cpf
-    let form = document.getElementById("formConfirmarVoo");
-    let hidden = form.querySelector('input[name="cpf_usuario"]');
-    if (!hidden) {
-        hidden = document.createElement("input");
-        hidden.type = "hidden";
-        hidden.name = "cpf_usuario";
-        form.appendChild(hidden);
-    }
-
-    // preencher com o responsável salvo na sessão (se existir), senão vazio
-    hidden.value = window.responsaveis && window.responsaveis[codigo] ? window.responsaveis[codigo] : "";
-
-
+    // abrir modal
     const modal = new bootstrap.Modal(document.getElementById("modalConfirmarVoo"));
     modal.show();
-}
+
+
+
 </script>
+
 
 </body>
 </html>

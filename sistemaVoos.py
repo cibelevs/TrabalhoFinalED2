@@ -163,31 +163,20 @@ def painel_usuario():
         flash("Faça login primeiro.", "erro")
         return redirect(url_for("login_usuario"))
 
-    # garantir estruturas na sessão
+    # garantir estruturas
     meus_voos = session.get("meus_voos", [])
     voos_pendentes = session.get("voos_pendentes", [])
-    # passageiros salvos por código na session (estrutura esperada: {codigo: [ {nome,cpf,tipo}, ... ]})
     passageiros_sessao = session.get("passageiros_voo", {})
 
-    # filtrar só os do usuário
+    # filtrar voos pertencentes ao usuário
     meus_voos_usuario = [
         v for v in meus_voos
         if v.get("usuario") == usuario and not v.get("confirmado", False)
     ]
+
     pendentes_usuario = [
         v for v in voos_pendentes
         if v.get("usuario") == usuario and not v.get("confirmado", False)
-    ]
-
-    meus_voos = [
-        v for v in session.get("meus_voos", [])
-        if v.get("usuario") == usuario and not v.get("confirmado", False)
-    ]
-
-
-    voos_pendentes = [
-        v for v in session.get("voos_pendentes", [])
-        if v.get("usuario") == usuario
     ]
 
     return render_template(
@@ -195,10 +184,9 @@ def painel_usuario():
         meus_voos=meus_voos_usuario,
         voos_pendentes=pendentes_usuario,
         passageiros_sessao=passageiros_sessao,
-        voos=None, 
-        usuario = usuario
+        voos=None,
+        usuario=usuario
     )
-
 
 
 
@@ -273,6 +261,27 @@ def adicionar_voo_usuario(codigo_voo):
     session.modified = True
     return True
 
+@app.route("/remover_passageiro/<codigo>", methods=["POST"])
+def remover_passageiro(codigo):
+    cpf = request.form.get("cpf")
+
+    if not cpf:
+        flash("CPF inválido!", "danger")
+        return redirect(url_for("adicionar_voos_usuario"))
+
+    # garantir existir
+    passageiros_voo = session.get("passageiros_voo", {})
+    lista = passageiros_voo.get(codigo, [])
+
+    # remover
+    nova_lista = [p for p in lista if p.get("cpf") != cpf]
+
+    passageiros_voo[codigo] = nova_lista
+    session["passageiros_voo"] = passageiros_voo
+    session.modified = True
+
+    flash("Passageiro removido com sucesso!", "success")
+    return redirect(url_for("adicionar_voos_usuario"))
 
 
 def remover_voo_usuario(codigo_voo):
@@ -314,7 +323,7 @@ def buscar_voos_usuario():
         voos=voos_filtrados,
         meus_voos=meus_voos,
         voos_pendentes=pendentes,
-        passageiros_sessao=passageiros_sessao
+        passageiros_sessao=passageiros_sessao, usuario = usuario
     )
 
 
@@ -497,65 +506,85 @@ def voos_confirmados():
 @app.route("/confirmar_passageiros", methods=["POST"])
 def confirmar_passageiros():
     usuario = session.get("usuario_logado")
-    codigo = session.get("codigo_voo_selecionado")  # voo atual
+    codigo = session.get("codigo_voo_selecionado")
 
     if not usuario or not codigo:
         flash("Erro: voo ou usuário não encontrados.", "danger")
         return redirect(url_for("painel_usuario"))
 
-    # --------------------------
-    # PEGAR CPF DO RESPONSÁVEL
-    # --------------------------
-    cpf_responsavel = request.form.get("cpf_responsavel", "").strip()
-    cpf_responsavel = cpf_responsavel.replace(".", "").replace("-", "")
+    # CPF do responsável
+    cpf_responsavel = request.form.get("cpf_responsavel", "").replace(".", "").replace("-", "")
 
-    if not cpf_responsavel or len(cpf_responsavel) != 11 or not cpf_responsavel.isdigit():
+    if not cpf_responsavel or len(cpf_responsavel) != 11:
         flash("CPF do responsável inválido!", "danger")
         return redirect(url_for("adicionar_voos_usuario"))
 
-    # Salvar cpf_responsavel por código
-    if "passageiros_responsavel" not in session:
-        session["passageiros_responsavel"] = {}
-
-    session["passageiros_responsavel"][codigo] = cpf_responsavel
-
-    # ----------------------------
-    # PASSAGEIROS ADICIONAIS
-    # ----------------------------
+    # garantir estrutura da sessão
     if "passageiros_voo" not in session:
         session["passageiros_voo"] = {}
 
-    if codigo not in session["passageiros_voo"]:
-        session["passageiros_voo"][codigo] = []
+    # pegar passageiros já existentes vindo do form
+    cpf_existentes = request.form.getlist("cpf_passageiros_existentes[]")
 
-    passageiros_existentes = session["passageiros_voo"][codigo]
+    # manter somente os passageiros que ainda existem
+    passageiros_atualizados = [
+        p for p in session["passageiros_voo"].get(codigo, [])
+        if p["cpf"] in cpf_existentes
+    ]
 
-    # CAPTURAR PASSAGEIROS NOVOS
+    # ================================
+    # 🔥 FILTRO IMPORTANTE:
+    # remover o usuário logado da lista (não deve aparecer como passageiro)
+    # ================================
+    passageiros_atualizados = [
+        p for p in passageiros_atualizados
+        if p["nome"].strip().lower() != usuario.strip().lower()
+    ]
+    # ================================
+
+
+    # adicionar o responsável com NOME COMPLETO
+    nome_responsavel = request.form.get("nome_responsavel")
+
+    if not nome_responsavel:
+        flash("O nome completo do responsável é obrigatório.", "danger")
+        return redirect(url_for("adicionar_voos_usuario"))
+
+    # garantir que o responsável só entre UMA vez
+    passageiros_atualizados = [
+        p for p in passageiros_atualizados
+        if p.get("tipo") != "responsavel"
+    ]
+
+    # adicionar responsável
+    passageiros_atualizados.append({
+        "nome": nome_responsavel,
+        "cpf": cpf_responsavel,
+        "tipo": "responsavel"
+    })
+
+    # novos passageiros
     nomes = request.form.getlist("novo_nome[]")
     cpfs = request.form.getlist("novo_cpf[]")
     tipos = request.form.getlist("novo_tipo[]")
 
     for nome, cpf, tipo in zip(nomes, cpfs, tipos):
-        nome = nome.strip()
-        cpf = cpf.strip().replace(".", "").replace("-", "")
-
-        # ❗ PULA se for o CPF do responsável
-        if cpf == cpf_responsavel:
-            continue
+        cpf = cpf.replace(".", "").replace("-", "")
 
         if nome and cpf:
-            passageiros_existentes.append({
+            passageiros_atualizados.append({
                 "nome": nome,
                 "cpf": cpf,
                 "tipo": tipo
             })
 
-    # SALVAR NA SESSION
-    session["passageiros_voo"][codigo] = passageiros_existentes
+    session["passageiros_voo"][codigo] = passageiros_atualizados
     session.modified = True
 
-    flash("Passageiros e CPF do responsável salvos!", "success")
+    flash("Passageiros atualizados com sucesso!", "success")
     return redirect(url_for("adicionar_voos_usuario"))
+
+
 
 
 @app.route("/logout")
@@ -621,7 +650,7 @@ def confirmar_voo(codigo):
     salvar_passageiros_csv(registros_para_csv)
 
     # 1. quantidade de passageiros
-    qtd_passageiros = 1 + len(passageiros_registrados)
+    qtd_passageiros = len(passageiros_registrados)
 
     # 2. atualizar assentos disponíveis
     voo["assentos_disponiveis"] -= qtd_passageiros
@@ -639,8 +668,6 @@ def confirmar_voo(codigo):
 
     # 4. atualizar arquivo
     salvar_voos(todos_voos)
-
-
 
 
 
