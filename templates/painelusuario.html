@@ -251,13 +251,6 @@
 
                     <td class="text-center">
 
-                        <form action="{{ url_for('confirmar_voo', codigo=voo.codigo) }}" method="post" class="mb-2">
-                            <input type="text" name="cpf_usuario" placeholder="CPF" class="form-control form-control-sm mb-2" required>
-                            <button class="btn btn-success btn-sm rounded-pill px-3">
-                                <i class="fa-solid fa-check"></i>
-                            </button>
-                        </form>
-
                         <form action="{{ url_for('remover_do_carrinho', codigo=voo.codigo) }}" method="post" class="d-inline">
                             <button class="btn btn-outline-danger btn-sm rounded-pill px-3">
                                 <i class="fa-solid fa-trash"></i>
@@ -338,7 +331,8 @@
       <div class="modal-footer">
           <button class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
           <form id="formConfirmarVoo" action="" method="POST">
-              <button class="btn btn-success rounded-pill px-4 fw-bold">Confirmar</button>
+                <input type="hidden" name="cpf_usuario" value="{{ usuario['cpf'] if usuario is mapping else usuario }}">
+            <button class="btn btn-success rounded-pill px-4 fw-bold">Confirmar</button>
           </form>
       </div>
 

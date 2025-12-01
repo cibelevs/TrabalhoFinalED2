@@ -108,7 +108,7 @@ def login_usuario_post():
     # procura usuário com nome e senha corretos
     usuario_valido = any(u.get('nome') == nome and u.get('senha') == senha for u in usuarios)
     if usuario_valido:
-        session["usuario_logado"] = nome
+        session["usuario_logado"] = usuario_valido
         session.modified = True
         return redirect(url_for('painel_usuario'))
 
@@ -165,9 +165,8 @@ def painel_usuario():
     # garantir estruturas na sessão
     meus_voos = session.get("meus_voos", [])
     voos_pendentes = session.get("voos_pendentes", [])
-
-    # passageiros salvos por código na session
-    passageiros_sessao = carregar_passageiros() or {}
+    # passageiros salvos por código na session (estrutura esperada: {codigo: [ {nome,cpf,tipo}, ... ]})
+    passageiros_sessao = session.get("passageiros_voo", {})
 
     # filtrar só os do usuário
     meus_voos_usuario = [
@@ -195,7 +194,8 @@ def painel_usuario():
         meus_voos=meus_voos_usuario,
         voos_pendentes=pendentes_usuario,
         passageiros_sessao=passageiros_sessao,
-        voos=None,
+        voos=None, 
+        usuario = usuario
     )
 
 
@@ -510,40 +510,51 @@ def confirmar_passageiros():
     flash("Alterações salvas com sucesso!", "success")
     return redirect(url_for("adicionar_voos_usuario"))
 
-@app.route("/remover_passageiro", methods=["POST"])
-def remover_passageiro():
-    codigo = session.get("codigo_voo_selecionado")
-    idx = int(request.form.get("id", -1))
-    for i in range(len(nomes)):
-        passageiro = {
-            "nome": nomes[i],
-            "cpf": cpfs[i],
-            "tipo": tipos[i]
-        }
-        novos.append(passageiro)
+@app.route("/remover_passageiro/<codigo>", methods=["POST"])
+def remover_passageiro(codigo):
+    # garante que o usuário está logado (se for o caso no seu app)
+    usuario = session.get("usuario_logado")
+    if not usuario:
+        flash("Faça login para continuar.", "erro")
+        return redirect(url_for("login_usuario"))
 
-        # 👉 ADICIONAR NA ÁRVORE B
-        passageiros_db.inserir_passageiro(
-            cpf=cpfs[i],
-            voo=voo,
-            origem="",
-            destino="",
-            horario=""
-        )
-    # adiciona aos existentes
-    session["passageiros_voo"][voo].extend(novos)
+    # pega o índice enviado pelo form (loop.index0 no template)
+    idx = request.form.get("id")
+    if idx is None:
+        flash("Requisição inválida.", "erro")
+        return redirect(url_for("adicionar_voos_usuario", codigo=codigo))
+
+    try:
+        idx = int(idx)
+    except ValueError:
+        flash("Índice do passageiro inválido.", "erro")
+        return redirect(url_for("adicionar_voos_usuario", codigo=codigo))
+
+    # pega a estrutura de passageiros da sessão
+    passageiros_por_voo = session.get("passageiros_voo", {})
+    lista = passageiros_por_voo.get(codigo, [])
+
+    # verifica bounds
+    if idx < 0 or idx >= len(lista):
+        flash("Passageiro não encontrado.", "erro")
+        return redirect(url_for("adicionar_voos_usuario", codigo=codigo))
+
+    # remove o passageiro
+    removido = lista.pop(idx)
+
+    # atualiza a sessão (se lista ficou vazia, opcionalmente remove a chave)
+    if lista:
+        passageiros_por_voo[codigo] = lista
+    else:
+        passageiros_por_voo.pop(codigo, None)
+
+    session["passageiros_voo"] = passageiros_por_voo
     session.modified = True
 
-    if codigo not in session.get("passageiros_voo", {}):
-        flash("Erro ao remover passageiro.", "danger")
-        return redirect(url_for("adicionar_voos_usuario"))
-
-    if 0 <= idx < len(session["passageiros_voo"][codigo]):
-        session["passageiros_voo"][codigo].pop(idx)
-        session.modified = True
-        flash("Passageiro removido!", "success")
-
-    return redirect(url_for("adicionar_voos_usuario"))
+    nome_removido = removido.get("nome") if isinstance(removido, dict) else str(removido)
+    flash(f"Passageiro removido: {nome_removido}", "sucesso")
+    # redireciona de volta para a página de gerenciar passageiros do mesmo voo
+    return redirect(url_for("adicionar_voos_usuario", codigo=codigo))
 
 
 @app.route("/logout")
@@ -560,13 +571,24 @@ def confirmar_voo(codigo):
         flash("Faça login para continuar.", "erro")
         return redirect(url_for("login_usuario"))
 
-    # 1. CPF do responsável pelo voo
+    #  Pegar passageiros registrados na sessão (lista daquele voo)
+    passageiros_registrados = session.get("passageiros_voo", {}).get(codigo, [])
+
+    #  CPF do responsável pelo voo (tente form, se vazio tente sessão)
     cpf_usuario = request.form.get("cpf_usuario", "").strip()
+
+    # se veio vazio, tente obter do usuario salvo na sessão (caso você tenha salvo o dict do usuário)
+    if not cpf_usuario:
+        if isinstance(usuario, dict):
+            cpf_usuario = usuario.get("cpf", "").strip()
+        else:
+            cpf_usuario = str(usuario).strip()  # fallback: nome (não ideal)
+
     if len(cpf_usuario) != 11 or not cpf_usuario.isdigit():
         flash("CPF inválido!", "erro")
         return redirect(url_for("painel_usuario"))
 
-    # 2. Carregar todos os voos cadastrados
+    #  Carregar todos os voos cadastrados
     todos_voos = carregar_voos()
 
     voo = next((v for v in todos_voos if v["codigo"] == codigo), None)
@@ -574,8 +596,7 @@ def confirmar_voo(codigo):
         flash("Voo não encontrado!", "erro")
         return redirect(url_for("painel_usuario"))
 
-    # 3. Pegar passageiros registrados na sessão
-    passageiros_registrados = session.get("passageiros_voo", {}).get(codigo, [])
+    
 
     # 4. Registrar passageiro responsável + outros passageiros
     registros_para_csv = []
