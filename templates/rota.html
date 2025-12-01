@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Melhor Rota</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 40px;
+        }
+        input, button {
+            padding: 8px;
+            margin: 5px;
+            font-size: 16px;
+        }
+        p {
+            font-size: 18px;
+        }
+        .erro {
+            color: red;
+        }
+        .rota {
+            color: green;
+            font-weight: bold;
+        }
+        #mapa {
+            height: 500px;
+            width: 80%;
+            margin: 25px auto;
+            border: 2px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Calcular Melhor Rota</h1>
+
+    <form method="post" action="/melhor_rota">
+        Origem: <input type="text" name="origem" required>
+        Destino: <input type="text" name="destino" required>
+        <button type="submit">Calcular</button>
+    </form>
+
+    {% if erro %}
+        <p class="erro">{{ erro }}</p>
+    {% endif %}
+
+    {% if rota %}
+        <h2>Rota encontrada:</h2>
+        <p class="rota">{{ " → ".join(rota) }}</p>
+        <p>Distância total: {{ "%.1f"|format(dist) }} km</p>
+    <button onclick="simularVoo({{ coords | tojson }})">
+    ✈ Simular avião no mapa
+</button>
+
+        <!-- MAPA -->
+        <div id="mapa"></div>
+    {% endif %}
+
+    <div style="margin-top: 30px;">
+        <a href="/grafo_rotas">Voltar para o Grafo de Rotas</a> |
+        <a href="/grafo_imagem">Ver grafo visual</a>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        let mapa = null;
+
+        function simularVoo(coords) {
+
+            if (!coords || coords.length === 0) {
+                alert("Sem coordenadas para simular!");
+                return;
+            }
+
+            // Se já existir mapa, remove
+            if (mapa !== null) mapa.remove();
+
+            // Criar mapa novo usando a origem
+            mapa = L.map('mapa').setView([coords[0][0], coords[0][1]], 5);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18
+            }).addTo(mapa);
+
+            // Ícone de avião
+            const aviaoIcon = L.icon({
+                iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
+                iconSize: [40, 40]
+            });
+
+            // Marcador do avião
+            let aviao = L.marker([coords[0][0], coords[0][1]], { icon: aviaoIcon }).addTo(mapa);
+
+            // Desenhar linha da rota
+            let linha = L.polyline(coords.map(p => [p[0], p[1]]), {
+                color: "blue",
+                weight: 3
+            }).addTo(mapa);
+
+            let i = 0;
+
+            function mover() {
+                if (i >= coords.length) return;
+
+                aviao.setLatLng([coords[i][0], coords[i][1]]);
+                mapa.panTo([coords[i][0], coords[i][1]]);
+
+                i++;
+                setTimeout(mover, 1000); // velocidade da animação
+            }
+
+            mover();
+        }
+    </script>
+
+</body>
+</html>
