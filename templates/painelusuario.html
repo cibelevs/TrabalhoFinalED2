@@ -365,6 +365,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
 });
 
+
+
 function abrirModalConfirmacao(btn) {
 
     const codigo = btn.dataset.codigo;
@@ -379,10 +381,12 @@ function abrirModalConfirmacao(btn) {
 
     const listaCompleta = [];
 
-    const nomeResponsavel =
-        window.responsaveis_nomes[codigo] ||
-        window.usuario.nome ||
-        "Responsável";
+   const responsavelObj = todos.find(p => 
+    (p.tipo || "").toLowerCase().includes("respons")
+    );
+
+    const nomeResponsavel = responsavelObj ? responsavelObj.nome : "Responsável";
+
 
     listaCompleta.push({
         nome: nomeResponsavel,
@@ -410,7 +414,9 @@ function abrirModalConfirmacao(btn) {
 }
 </script>
 
-
+{% if responsavel %}
+    <p>Responsável pelo voo: <strong>{{ responsavel.nome }}</strong></p>
+{% endif %}
 
 </body>
 </html>

@@ -351,11 +351,18 @@ def painel_usuario():
         if v.get("usuario") == usuario and not v.get("confirmado", False)
     ]
 
+    codigo = session.get("codigo_voo_selecionado")
+    todos_passageiros = session.get("passageiros_voo", {}).get(codigo, [])
+
+    responsavel = next(
+        (p for p in todos_passageiros if p.get("tipo") == "responsavel"),
+        None
+    )
     return render_template(
         "painelusuario.html",
         meus_voos=meus_voos_usuario,
         voos_pendentes=pendentes_usuario,
-        passageiros_sessao=passageiros_sessao,
+        todos_passageiros = todos_passageiros,
         voos=None,
         usuario=usuario
     )
