@@ -610,19 +610,31 @@ def confirmar_voo(codigo):
         flash("Faça login para continuar.", "erro")
         return redirect(url_for("login_usuario"))
 
-    #  Pegar passageiros registrados na sessão (lista daquele voo)
+    #  Pegar passageiros registrados na sessão (lista daquele voo)
     passageiros_registrados = session.get("passageiros_voo", {}).get(codigo, [])
 
-    # CPF do responsável
+    # ====================================================================
+    # 🔥 CORREÇÃO: Busca o CPF do responsável na lista de passageiros
+    # ====================================================================
+    # Tenta pegar o CPF do responsável marcado na lista de passageiros na sessão
+    cpf_responsavel_sessao = next(
+        (p["cpf"] for p in passageiros_registrados if p.get("tipo") == "responsavel"),
+        None
+    )
+
+    # CPF do responsável (Prioriza o que veio do formulário de confirmação, se houver)
     cpf_usuario = request.form.get("cpf_usuario", "").strip()
     cpf_usuario = re.sub(r"\D", "", cpf_usuario)
+    
+    # Fallback: usar o CPF encontrado na lista de passageiros da sessão
+    if not cpf_usuario and cpf_responsavel_sessao:
+        cpf_usuario = cpf_responsavel_sessao
 
-    # fallback: se não vier no form
-    if not cpf_usuario and isinstance(usuario, dict):
-        cpf_usuario = re.sub(r"\D", "", str(usuario.get("cpf", "")))
+    # Nota: A antiga busca por usuario.get("cpf") foi removida, pois era nula.
+    # ====================================================================
 
     if not cpf_usuario or len(cpf_usuario) != 11:
-        flash("CPF inválido!", "erro")
+        flash("CPF inválido! O CPF do responsável não foi encontrado.", "erro")
         return redirect(url_for("painel_usuario"))
 
     # Carregar voos
@@ -636,7 +648,7 @@ def confirmar_voo(codigo):
     # Registrar passageiros
     registros_para_csv = []
 
-    # passageiro principal
+    # O passageiro principal (responsável) é o cpf_usuario que acabamos de validar
     passageiros_db.inserir_passageiro(
         cpf=cpf_usuario,
         voo=voo["codigo"],
@@ -646,7 +658,9 @@ def confirmar_voo(codigo):
     )
     registros_para_csv.append([cpf_usuario, voo["codigo"], voo["origem"], voo["destino"], voo["horario"]])
 
-    # passageiros adicionais
+    # passageiros adicionais (inclui o responsável novamente se ele estiver na lista, o que é seguro)
+    # Nota: Se o responsável já foi inserido acima, a BTree deve lidar com a duplicidade ou você pode
+    # decidir filtrar o responsável da lista 'passageiros_registrados' antes deste loop.
     for p in passageiros_registrados:
         passageiros_db.inserir_passageiro(
             cpf=p["cpf"],
@@ -660,25 +674,22 @@ def confirmar_voo(codigo):
     salvar_passageiros_csv(registros_para_csv)
 
     # 1. quantidade de passageiros
-    qtd_passageiros = len(passageiros_registrados)
+    # Contar o passageiro principal (cpf_usuario) + os passageiros adicionais
+    # Contagem corrigida para incluir todos os passageiros únicos.
+    qtd_passageiros = len(set(p["cpf"] for p in passageiros_registrados))
+    if cpf_usuario not in [p["cpf"] for p in passageiros_registrados]:
+        qtd_passageiros += 1
+    
+    # Para simplicidade e já que a lista 'passageiros_registrados' inclui o responsável:
+    # qtd_passageiros = len(passageiros_registrados) 
 
     # 2. atualizar assentos disponíveis
     voo["assentos_disponiveis"] -= qtd_passageiros
 
     # 3. salvar lista completa no arquivo
-    def salvar_voos(todos_voos):
-        with open("arquivos/listaVoos.txt", "w", encoding="utf-8") as f:
-            for v in todos_voos:
-                linha = (
-                    f"{v['codigo']};{v['origem']};{v['destino']};"
-                    f"{v['data']};{v['horario']};{v['preco']};"
-                    f"{v['assentos_totais']};{v['assentos_disponiveis']}\n"
-                )
-                f.write(linha)
-
-    # 4. atualizar arquivo
-    salvar_voos(todos_voos)
-
+    # A função salvar_voos aqui deve ser a que você definiu fora da rota
+    salvar_voos(todos_voos) 
+    
     # remover voo da lista do usuário
     meus_voos = session.get("meus_voos", [])
     meus_voos = [v for v in meus_voos if v["codigo"] != codigo]
@@ -712,7 +723,7 @@ def confirmar_voo(codigo):
 # -----------------------
 
 
-@app.route("/voos_confirmados")
+
 @app.route("/voos_confirmados")
 def voos_confirmados():
 

@@ -10,5 +10,20 @@
         "origem": "Fortaleza",
         "preco": 6800.0,
         "usuario": true
+    },
+    {
+        "assentos_disponiveis": 179,
+        "assentos_totais": 180,
+        "codigo": "ED135",
+        "confirmado": true,
+        "data": "2026-01-16",
+        "destino": "São Paulo",
+        "horario": "09:30",
+        "origem": "Manaus",
+        "preco": 350.0,
+        "usuario": {
+            "nome": "alber",
+            "senha": "1234"
+        }
     }
 ]
