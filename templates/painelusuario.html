@@ -331,7 +331,8 @@
       <div class="modal-footer">
           <button class="btn btn-secondary rounded-pill px-3" data-bs-dismiss="modal">Cancelar</button>
           <form id="formConfirmarVoo" action="" method="POST">
-                <input type="hidden" name="cpf_usuario" value="{{ usuario['cpf'] if usuario is mapping else usuario }}">
+               <input type="hidden" name="cpf_usuario"
+           value="{{ session.get('passageiros_responsavel', {}).get(voo_codigo_atual, '') }}">
             <button class="btn btn-success rounded-pill px-4 fw-bold">Confirmar</button>
           </form>
       </div>
@@ -344,6 +345,7 @@
 
 <script>
     window.passageiros = {{ passageiros_sessao | tojson | safe }};
+    window.responsaveis = {{ session.get('passageiros_responsavel', {}) | tojson | safe }};
 </script>
 
 <script>
@@ -364,6 +366,23 @@ function abrirModalConfirmacao(codigo, preco, qtd) {
     document.getElementById("modalListaNomes").innerHTML = html;
 
     document.getElementById("formConfirmarVoo").action = "/confirmar_voo/" + codigo;
+
+
+    document.getElementById("formConfirmarVoo").action = "/confirmar_voo/" + codigo;
+
+    // garantir hidden cpf
+    let form = document.getElementById("formConfirmarVoo");
+    let hidden = form.querySelector('input[name="cpf_usuario"]');
+    if (!hidden) {
+        hidden = document.createElement("input");
+        hidden.type = "hidden";
+        hidden.name = "cpf_usuario";
+        form.appendChild(hidden);
+    }
+
+    // preencher com o responsável salvo na sessão (se existir), senão vazio
+    hidden.value = window.responsaveis && window.responsaveis[codigo] ? window.responsaveis[codigo] : "";
+
 
     const modal = new bootstrap.Modal(document.getElementById("modalConfirmarVoo"));
     modal.show();

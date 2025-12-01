@@ -124,10 +124,16 @@
 
     <hr class="my-4">
 
-    <h5 class="mb-3">Adicionar novo passageiro:</h5>
 
+    <h5 class="mb-3">Adicionar novo passageiro:</h5>
     <!-- FORM de adicionar passageiros -->
     <form method="POST" action="/confirmar_passageiros">
+        <!-- CPF do responsável (novo) -->
+        <div class="mb-3">
+            <label class="form-label">CPF do responsável pela reserva:</label>
+            <input type="text" name="cpf_responsavel" id="cpf_responsavel"
+                class="form-control" placeholder="Digite o CPF do responsável" required>
+        </div>
 
         <div id="listaPassageiros"></div>
 
@@ -139,6 +145,7 @@
             Salvar alterações
         </button>
     </form>
+
 
     <hr class="my-4">
 
