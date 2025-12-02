@@ -3,7 +3,8 @@ import csv
 import re
 import ast
 from flask import Flask, json, render_template, request, redirect, session, url_for, flash, get_flashed_messages
-from passageiros_btree import PassageirosBTree 
+from passageiros_btree import PassageirosBTree, Passageiro
+
 import pandas as pd
 
 
@@ -11,8 +12,13 @@ app = Flask(__name__)
 app.secret_key = "sua_chave_secreta_aqui"  
 
 # Inicialização da árvore B para passageiros
-passageiros_db = PassageirosBTree(ordem=3)
-passageiros_db.carregar_csv("arquivos/passageiros.csv")
+# Árvore indexada por CPF
+passageiros_db_cpf = PassageirosBTree(ordem=3)
+
+# Árvore indexada por NOME
+passageiros_db_nome = PassageirosBTree(ordem=3)
+
+
 
 # FUNÇÕES DE PERSISTÊNCIA DE DADOS
 # -----------------------
@@ -102,8 +108,18 @@ def salvar_voos_confirmados(lista):
 
 # --- Funções para passageiros ---
 def carregar_passageiros():
-    df = pd.read_csv("arquivos/passageiros.csv")
-    df = df.fillna("")  # evita NaN -> Undefined no template
+    caminho = "arquivos/passageiros.csv"
+
+    # Se o arquivo não existir, cria com cabeçalho
+    if not os.path.exists(caminho) or os.path.getsize(caminho) == 0:
+        with open(caminho, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(["nome","cpf","voo","origem","destino","horario"])
+        return []  # nenhum passageiro por enquanto
+
+    # Agora o arquivo existe e tem cabeçalho → ler com segurança
+    df = pd.read_csv(caminho)
+    df = df.fillna("")
     return df.to_dict(orient="records")
 
 
@@ -117,7 +133,7 @@ def salvar_passageiros_csv(linhas):
 
         # escrever cabeçalho se o arquivo está vazio
         if not arquivo_existe:
-            writer.writerow(["cpf", "voo", "origem", "destino", "horario"])
+            writer.writerow(["nome","cpf", "voo", "origem", "destino", "horario"])
 
         # grava cada passageiro confirmado
         for linha in linhas:
@@ -647,14 +663,30 @@ def confirmar_voo(codigo):
     # ====================================================================
     # 1️⃣ Salvar RESPONSÁVEL (apenas 1 vez)
     # ====================================================================
-    passageiros_db.inserir_passageiro(
-        cpf=cpf_usuario,
-        voo=voo["codigo"],
-        origem=voo["origem"],
-        destino=voo["destino"],
-        horario=voo["horario"]
-    )
-    registros_para_csv.append([cpf_usuario, voo["codigo"], voo["origem"], voo["destino"], voo["horario"]])
+    nome_responsavel = next(
+    (p["nome"] for p in passageiros_registrados if p.get("tipo") == "responsavel"),
+    "")
+    pass_obj = passageiros_db_cpf.criar_passageiro(
+        nome_responsavel,
+        cpf_usuario,
+        voo["codigo"],
+        voo["origem"],
+        voo["destino"],
+        voo["horario"]
+        )
+    passageiros_db_cpf.inserir(cpf_usuario, pass_obj)
+    passageiros_db_nome.inserir(nome_responsavel.upper(), pass_obj)
+
+
+    registros_para_csv.append([
+    nome_responsavel,
+    cpf_usuario,
+    voo["codigo"],
+    voo["origem"],
+    voo["destino"],
+    voo["horario"]
+    ])
+    
 
     # ====================================================================
     # 2️⃣ Remover o responsável da lista → evita duplicação
@@ -668,16 +700,28 @@ def confirmar_voo(codigo):
     # 3️⃣ Salvar SOMENTE passageiros adicionais
     # ====================================================================
     for p in passageiros_filtrados:
-        passageiros_db.inserir_passageiro(
-            cpf=p["cpf"],
-            voo=voo["codigo"],
-            origem=voo["origem"],
-            destino=voo["destino"],
-            horario=voo["horario"]
+        pass_obj = passageiros_db_cpf.criar_passageiro(
+            nome_responsavel,
+            cpf_usuario,
+            voo["codigo"],
+            voo["origem"],
+            voo["destino"],
+            voo["horario"]
         )
+        passageiros_db_cpf.inserir(p["cpf"], pass_obj)
+        passageiros_db_nome.inserir(p["nome"].upper(), pass_obj)
+
+
+        # 👉 AGORA SALVA NOME + CPF + DEMAIS DADOS
         registros_para_csv.append([
-            p["cpf"], voo["codigo"], voo["origem"], voo["destino"], voo["horario"]
+        p["nome"],
+        p["cpf"],
+        voo["codigo"],
+        voo["origem"],
+        voo["destino"],
+        voo["horario"]
         ])
+        
 
     salvar_passageiros_csv(registros_para_csv)
 
@@ -798,7 +842,7 @@ def remover_voo_confirmado(codigo):
             for linha in leitor:
 
                 # Manter cabeçalho sempre
-                if linha == ["cpf", "voo", "origem", "destino", "horario"]:
+                if linha == [ "nome","cpf", "voo", "origem", "destino", "horario"]:
                     linhas_restantes.append(linha)
                     continue
 
@@ -872,15 +916,64 @@ def index():
 @app.route('/buscar_passageiro_cpf')
 def buscar_passageiro_cpf():
     cpf = request.args.get('cpf', '').strip()
-    passageiro = passageiros_db.buscar_por_cpf(cpf)
-    # use o template que você realmente criou (buscar_passageiro.html ou buscar_passageiro_manual.html)
-    return render_template('buscar_passageiro.html', passageiro=passageiro, cpf=cpf)
+    passageiro = passageiros_db_cpf.buscar(cpf)
+    return render_template('buscar_passageiro_cpf.html', passageiro=passageiro, cpf=cpf)
+
+@app.route('/buscar_passageiro_nome')
+def buscar_passageiro_nome():
+    nome = request.args.get('nome', '').strip().upper()
+    passageiro = passageiros_db_nome.buscar(nome)
+    return render_template('buscar_passageiro_nome.html', passageiro=passageiro, nome=nome)
 
 
-@app.route('/listar_passageiros')
-def listar_passageiros():
-    lista = passageiros_db.listar_ordenado()  # retorna [(cpf, passageiro_obj), ...]
-    return render_template('listar_passageiros.html', passageiros=lista)
+
+
+@app.route('/listar_passageiros_cpf')
+def listar_passageiros_cpf():
+    passageiros = carregar_passageiros()
+    # Ordenar por CPF
+    lista_cpf = sorted(passageiros, key=lambda p: p['cpf'])
+    return render_template('listar_passageiros_cpf.html', lista_cpf=lista_cpf)
+
+# Exemplo para listar passageiros ordenados por Nome
+@app.route('/listar_passageiros_nome')
+def listar_passageiros_nome():
+    passageiros = carregar_passageiros()
+    # Ordenar por Nome
+    lista_nome = sorted(passageiros, key=lambda p: p['nome'].lower())
+    return render_template('listar_passageiros_nome.html', lista_nome=lista_nome)
+
+
+
+def carregar_passageiros_csv_dupla(caminho, arvore_cpf, arvore_nome):
+    try:
+        with open(caminho, newline="", encoding="utf-8") as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                nome = row["nome"]
+                cpf = row["cpf"]
+                voo = row["voo"]
+                origem = row["origem"]
+                destino = row["destino"]
+                horario = row["horario"]
+
+                # Criar objeto Passageiro
+                passageiro = Passageiro(nome, cpf, voo, origem, destino, horario)
+
+                # Inserir nas duas árvores
+                arvore_cpf.inserir(cpf, passageiro)
+                arvore_nome.inserir(nome.upper(), passageiro)
+
+    except FileNotFoundError:
+        print("Arquivo passageiros.csv não encontrado (ok se ainda não existe).")
+
+# Carregar o mesmo CSV em AMBAS as árvores  
+carregar_passageiros_csv_dupla(
+"arquivos/passageiros.csv",
+passageiros_db_cpf,
+passageiros_db_nome
+)      
+
 
 
 # EXECUÇÃO DO APLICATIVO

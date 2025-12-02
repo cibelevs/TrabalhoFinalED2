@@ -2,15 +2,16 @@ import pandas as pd
 from BTreeBiblioteca import BTree
 
 class Passageiro:
-    def __init__(self, cpf, voo, origem, destino, horario):
-        self.cpf = str(cpf)
-        self.voo = str(voo)
+    def __init__(self, nome, cpf, voo, origem, destino, horario):
+        self.nome = nome
+        self.cpf = cpf
+        self.voo = voo
         self.origem = origem
         self.destino = destino
         self.horario = horario
 
     def __repr__(self):
-        return f"Passageiro(cpf={self.cpf}, voo={self.voo})"
+        return f"Passageiro(nome={self.nome}, cpf={self.cpf}, voo={self.voo})"
 
 
 class PassageirosBTree:
@@ -18,57 +19,29 @@ class PassageirosBTree:
         self.btree = BTree(ordem)
         self.passageiros_por_voo = {}
 
-    # ------------------------------------
-    # CARREGA CSV E INSERE NA ÁRVORE-B
-    # ------------------------------------
-    def carregar_csv(self, caminho_csv):
-        try:
-            df = pd.read_csv(
-                caminho_csv,
-                header=None,
-                names=["cpf", "voo", "origem", "destino", "horario"]
-            )
-        except FileNotFoundError:
-            return
+    # Somente cria o passageiro (não insere ainda)
+    def criar_passageiro(self, nome, cpf, voo, origem, destino, horario):
+        return Passageiro(nome, cpf, voo, origem, destino, horario)
 
-        for _, row in df.iterrows():
-            self.inserir_passageiro(
-                cpf=row["cpf"],
-                voo=row["voo"],
-                origem=row["origem"],
-                destino=row["destino"],
-                horario=row["horario"]
-            )
-
-    # ------------------------------------
-    # INSERIR PASSAGEIRO NA ÁRVORE-B
-    # ------------------------------------
-    def inserir_passageiro(self, cpf, voo, origem, destino, horario):
-        passageiro = Passageiro(cpf, voo, origem, destino, horario)
-
-        # inserir por CPF
-        self.btree.inserir(str(cpf), passageiro)
+    # Insere NA ÁRVORE e no agrupamento por voo
+    def inserir(self, chave, passageiro):
+        # Inserção na B-Tree
+        self.btree.inserir(str(chave), passageiro)
 
         # Agrupar por voo
-        if voo not in self.passageiros_por_voo:
-            self.passageiros_por_voo[voo] = []
+        if passageiro.voo not in self.passageiros_por_voo:
+            self.passageiros_por_voo[passageiro.voo] = []
 
-        self.passageiros_por_voo[voo].append(passageiro)
+        self.passageiros_por_voo[passageiro.voo].append(passageiro)
 
-    # ------------------------------------
-    # BUSCAR POR CPF
-    # ------------------------------------
-    def buscar_por_cpf(self, cpf):
-        return self.btree.buscar(str(cpf))
+    # Busca por CPF ou NOME
+    def buscar(self, chave):
+        return self.btree.buscar(str(chave))
 
-    # ------------------------------------
-    # LISTAR (ORDENADO) POR CPF
-    # ------------------------------------
-    def listar_ordenado(self):
+    # Listagem ordenada de todos os passageiros
+    def listar(self):
         return self.btree.listar_chave_valor()
 
-    # ------------------------------------
-    # LISTAR POR CÓDIGO DO VOO
-    # ------------------------------------
+    # Listagem por código do voo
     def listar_por_voo(self, codigo_voo):
         return self.passageiros_por_voo.get(codigo_voo, [])

@@ -55,5 +55,35 @@
             "nome": "alber",
             "senha": "1234"
         }
+    },
+    {
+        "assentos_disponiveis": 179,
+        "assentos_totais": 180,
+        "codigo": "ED110",
+        "confirmado": true,
+        "data": "2026-01-18",
+        "destino": "Rio de Janeiro",
+        "horario": "14:15",
+        "origem": "Florianópolis",
+        "preco": 650.0,
+        "usuario": {
+            "nome": "alber",
+            "senha": "1234"
+        }
+    },
+    {
+        "assentos_disponiveis": 178,
+        "assentos_totais": 180,
+        "codigo": "ED205",
+        "confirmado": true,
+        "data": "2026-01-22",
+        "destino": "Brasília",
+        "horario": "10:45",
+        "origem": "Recife",
+        "preco": 720.55,
+        "usuario": {
+            "nome": "alber",
+            "senha": "1234"
+        }
     }
 ]

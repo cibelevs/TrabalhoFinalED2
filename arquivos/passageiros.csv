@@ -1,6 +1,4 @@
-09125822518,ED135,Manaus,São Paulo,09:30
-56394896420,IN346,Canadá,Salvador,15:30
-44444444420,ED300,Porto Alegre,Salvador,09:35
-07997765643,IN610,Fortaleza,Paris (CDG),21:50
-22222222230,IN610,Fortaleza,Paris (CDG),21:50
-56394896420,ED213,Maceió,São Paulo,22:00
+nome,cpf,voo,origem,destino,horario
+Alberman Santos ,09125822521,ED110,Florianópolis,Rio de Janeiro,14:15
+Pedro Souza,19125822521,ED205,Recife,Brasília,10:45
+caio gomes,02222287667,ED205,Recife,Brasília,10:45

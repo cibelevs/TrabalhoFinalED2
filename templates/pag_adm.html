@@ -105,26 +105,43 @@
     <div class="container">
         <a class="navbar-brand" href="/">✈ Sistema de Controle de Voos</a>
 
-        <div class="collapse navbar-collapse justify-content-end">
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse justify-content-end" id="menu">
             <ul class="navbar-nav">
 
+                <!-- CONSULTAR E EDITAR VOOS -->
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('voos_usuario') }}">
                         <i class="fa-solid fa-plane-departure me-1"></i> Consultar e Editar Voos
                     </a>
                 </li>
-                            <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('buscar_passageiro_cpf') }}">
+
+                <!-- BUSCAR PASSAGEIRO -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                         <i class="fa-solid fa-id-card me-1"></i> Buscar Passageiro
                     </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('buscar_passageiro_cpf') }}">Buscar por CPF</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('buscar_passageiro_nome') }}">Buscar por Nome</a></li>
+                    </ul>
                 </li>
 
-                <li class="nav-item">
-                    <a class="nav-link" href="{{ url_for('listar_passageiros') }}">
+                <!-- LISTAR PASSAGEIROS -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                         <i class="fa-solid fa-list me-1"></i> Listar Passageiros
                     </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('listar_passageiros_cpf') }}">Listar por CPF</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('listar_passageiros_nome') }}">Listar por Nome</a></li>
+                    </ul>
                 </li>
 
+                <!-- SAIR -->
                 <li class="nav-item">
                     <a class="nav-link" href="/">
                         <i class="fa-solid fa-right-from-bracket me-1"></i> Sair
@@ -144,7 +161,6 @@
     <!-- INFO SOBRE CÓDIGOS -->
     <div class="shadow-sm text-center mb-5 p-3 rounded"
          style="background-color: #fff3e0; border-left: 6px solid var(--laranja); font-size: 1.05rem;">
-
         <i class="fa-solid fa-circle-info me-2" style="color: var(--laranja-escuro);"></i>
         <strong>OBS:</strong> Voos <strong>Nacionais</strong> começam com <strong>ED</strong> e 
         voos <strong>Internacionais</strong> começam com <strong>IN</strong>.
@@ -152,16 +168,16 @@
 
     <!-- FLASH MESSAGES -->
     {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
+    {% if messages %}
         <div>
         {% for category, msg in messages %}
-          <div class="alert alert-{{ 'danger' if category == 'erro' else 'success' }} alert-dismissible fade show">
-            {{ msg }}
-            <button class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
+            <div class="alert alert-{{ 'danger' if category == 'erro' else 'success' }} alert-dismissible fade show">
+                {{ msg }}
+                <button class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
         {% endfor %}
         </div>
-      {% endif %}
+    {% endif %}
     {% endwith %}
 
     <!-- DASHBOARD CARDS -->
@@ -177,9 +193,7 @@
         <div class="col-md-3">
             <div class="dashboard-card text-center">
                 <i class="fa-solid fa-users dashboard-icon mb-2"></i>
-                <h4 class="fw-bold">
-                    {{ voos|sum(attribute='assentos_totais') }}
-                </h4>
+                <h4 class="fw-bold">{{ voos|sum(attribute='assentos_totais') }}</h4>
                 <p class="text-muted m-0">Assentos totais</p>
             </div>
         </div>
@@ -207,8 +221,6 @@
                 <p class="text-muted m-0">Último voo criado</p>
             </div>
         </div>
-
-           
     </div>
 
     <!-- FORMULÁRIO DE ADIÇÃO DE VOOS -->
@@ -247,7 +259,9 @@
                 </div>
 
                 <div class="text-end mt-3">
-                    <button class="btn btn-laranja px-4"><i class="fa-solid fa-circle-plus me-1"></i> Adicionar</button>
+                    <button class="btn btn-laranja px-4">
+                        <i class="fa-solid fa-circle-plus me-1"></i> Adicionar
+                    </button>
                 </div>
 
             </form>
