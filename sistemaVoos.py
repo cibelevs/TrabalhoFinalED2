@@ -701,8 +701,8 @@ def confirmar_voo(codigo):
     # ====================================================================
     for p in passageiros_filtrados:
         pass_obj = passageiros_db_cpf.criar_passageiro(
-            nome_responsavel,
-            cpf_usuario,
+            p["nome"],     # nome correto do passageiro
+            p["cpf"],      # CPF correto do passageiro
             voo["codigo"],
             voo["origem"],
             voo["destino"],
@@ -710,6 +710,7 @@ def confirmar_voo(codigo):
         )
         passageiros_db_cpf.inserir(p["cpf"], pass_obj)
         passageiros_db_nome.inserir(p["nome"].upper(), pass_obj)
+
 
 
         # 👉 AGORA SALVA NOME + CPF + DEMAIS DADOS
@@ -913,17 +914,30 @@ def index():
 # PAINEL DO ADM — LISTAR PASSAGEIROS POR VOO
 
 # --- ROTAS PARA BUSCA / LISTAGEM DE PASSAGEIROS (BTree) ---
-@app.route('/buscar_passageiro_cpf')
+@app.route('/buscar_passageiro_cpf', methods=['GET', 'POST'])
 def buscar_passageiro_cpf():
-    cpf = request.args.get('cpf', '').strip()
+    if request.method == "POST":
+        cpf = request.form.get("cpf", "").strip()
+    else:
+        cpf = request.args.get("cpf", "").strip()
+
     passageiro = passageiros_db_cpf.buscar(cpf)
     return render_template('buscar_passageiro_cpf.html', passageiro=passageiro, cpf=cpf)
 
-@app.route('/buscar_passageiro_nome')
+@app.route('/buscar_passageiro_nome', methods=['GET', 'POST'])
 def buscar_passageiro_nome():
-    nome = request.args.get('nome', '').strip().upper()
+    if request.method == "POST":
+        nome = request.form.get("nome", "").strip().upper()
+    else:
+        nome = request.args.get("nome", "").strip().upper()
+
     passageiro = passageiros_db_nome.buscar(nome)
-    return render_template('buscar_passageiro_nome.html', passageiro=passageiro, nome=nome)
+
+    return render_template(
+        'buscar_passageiro_nome.html',
+        passageiros=[passageiro] if passageiro else [],
+        nome=nome
+    )
 
 
 

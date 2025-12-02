@@ -85,5 +85,95 @@
             "nome": "alber",
             "senha": "1234"
         }
+    },
+    {
+        "assentos_disponiveis": 178,
+        "assentos_totais": 180,
+        "codigo": "ED110",
+        "confirmado": true,
+        "data": "2026-01-18",
+        "destino": "Rio de Janeiro",
+        "horario": "14:15",
+        "origem": "Florianópolis",
+        "preco": 650.0,
+        "usuario": {
+            "nome": "alber",
+            "senha": "1234"
+        }
+    },
+    {
+        "assentos_disponiveis": 176,
+        "assentos_totais": 180,
+        "codigo": "ED110",
+        "confirmado": true,
+        "data": "2026-01-18",
+        "destino": "Rio de Janeiro",
+        "horario": "14:15",
+        "origem": "Florianópolis",
+        "preco": 650.0,
+        "usuario": {
+            "nome": "alber",
+            "senha": "1234"
+        }
+    },
+    {
+        "assentos_disponiveis": 178,
+        "assentos_totais": 180,
+        "codigo": "ED178",
+        "confirmado": true,
+        "data": "2026-01-25",
+        "destino": "Fortaleza",
+        "horario": "16:20",
+        "origem": "Curitiba",
+        "preco": 580.0,
+        "usuario": {
+            "nome": "alber",
+            "senha": "1234"
+        }
+    },
+    {
+        "assentos_disponiveis": 178,
+        "assentos_totais": 180,
+        "codigo": "ED099",
+        "confirmado": true,
+        "data": "2026-01-28",
+        "destino": "Vitória",
+        "horario": "06:50",
+        "origem": "Belo Horizonte",
+        "preco": 510.75,
+        "usuario": {
+            "nome": "alber",
+            "senha": "1234"
+        }
+    },
+    {
+        "assentos_disponiveis": 175,
+        "assentos_totais": 180,
+        "codigo": "ED110",
+        "confirmado": true,
+        "data": "2026-01-18",
+        "destino": "Rio de Janeiro",
+        "horario": "14:15",
+        "origem": "Florianópolis",
+        "preco": 650.0,
+        "usuario": {
+            "nome": "alber",
+            "senha": "1234"
+        }
+    },
+    {
+        "assentos_disponiveis": 177,
+        "assentos_totais": 180,
+        "codigo": "ED178",
+        "confirmado": true,
+        "data": "2026-01-25",
+        "destino": "Fortaleza",
+        "horario": "16:20",
+        "origem": "Curitiba",
+        "preco": 580.0,
+        "usuario": {
+            "nome": "alber",
+            "senha": "1234"
+        }
     }
 ]
