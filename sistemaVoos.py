@@ -860,7 +860,7 @@ def remover_voo_confirmado(codigo):
         escritor.writerows(linhas_restantes)
     # ==========================================================
 
-    flash("Voo cancelado e passageiros removidos com sucesso. Taxa de R$ 50,00 aplicada.", "warning")
+    flash("Voo cancelado e passageiros removidos com sucesso. Taxa de R$ 150,00 aplicada.", "warning")
     return redirect(url_for("voos_confirmados"))
 
 
@@ -944,18 +944,13 @@ def buscar_passageiro_nome():
 
 @app.route('/listar_passageiros_cpf')
 def listar_passageiros_cpf():
-    passageiros = carregar_passageiros()
-    # Ordenar por CPF
-    lista_cpf = sorted(passageiros, key=lambda p: p['cpf'])
-    return render_template('listar_passageiros_cpf.html', lista_cpf=lista_cpf)
+    passageiros = passageiros_db_cpf.listar()  # já vem ordenado pelo CPF
+    return render_template('listar_passageiros_cpf.html', lista_cpf=passageiros)
 
-# Exemplo para listar passageiros ordenados por Nome
 @app.route('/listar_passageiros_nome')
 def listar_passageiros_nome():
-    passageiros = carregar_passageiros()
-    # Ordenar por Nome
-    lista_nome = sorted(passageiros, key=lambda p: p['nome'].lower())
-    return render_template('listar_passageiros_nome.html', lista_nome=lista_nome)
+    passageiros = passageiros_db_nome.listar()  # já vem ordenado pelo Nome
+    return render_template('listar_passageiros_nome.html', lista_nome=passageiros)
 
 
 

@@ -40,7 +40,22 @@ class PassageirosBTree:
 
     # Listagem ordenada de todos os passageiros
     def listar(self):
-        return self.btree.listar_chave_valor()
+        """Retorna todos os passageiros em ordem pela chave da BTree."""
+        lista = []
+
+        def inorder(no):
+            if no.folha:
+                for v in no.valores:
+                    lista.append(v)
+                return
+
+            for i in range(len(no.chaves)):
+                inorder(no.filhos[i])
+                lista.append(no.valores[i])
+            inorder(no.filhos[-1])
+
+        inorder(self.btree.raiz)
+        return lista
 
     # Listagem por código do voo
     def listar_por_voo(self, codigo_voo):

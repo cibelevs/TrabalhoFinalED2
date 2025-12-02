@@ -4,37 +4,114 @@
     <meta charset="UTF-8">
     <title>Buscar Passageiro por CPF</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <style>
+        body {
+            background-color: #ffffff; /* fundo totalmente branco */
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        /* Cards elegantes */
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+            border: none;
+        }
+
+        /* Botões laranja */
+        .btn-orange {
+            background-color: #ff9f1c;
+            border-color: #ff9f1c;
+            color: #fff;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .btn-orange:hover {
+            background-color: #ff7f0f;
+            border-color: #ff7f0f;
+            color: #fff;
+        }
+
+        /* Botão secundário branco com borda laranja */
+        .btn-white-outline {
+            background-color: #fff;
+            border: 2px solid #ff9f1c;
+            color: #ff9f1c;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .btn-white-outline:hover {
+            background-color: #ff9f1c;
+            color: #fff;
+        }
+
+        /* Título */
+        h2 {
+            color: #ff7f0f;
+            font-weight: 600;
+        }
+
+        /* Listas dentro do card */
+        .list-group-item {
+            border: none;
+            padding: 0.75rem 1rem;
+            font-size: 1rem;
+        }
+
+        .list-group-item strong {
+            color: #ff7f0f;
+        }
+
+        /* Formulário */
+        .form-control:focus {
+            border-color: #ff9f1c;
+            box-shadow: 0 0 0 0.2rem rgba(255, 159, 28, 0.25);
+        }
+    </style>
 </head>
 <body class="p-4">
 
-<h2 class="text-center text-warning mb-4">Buscar Passageiro - CPF</h2>
+<div class="container">
+    <h2 class="text-center mb-5">Buscar Passageiro - CPF</h2>
 
-<form method="post" action="{{ url_for('buscar_passageiro_cpf') }}" class="mb-4 text-center">
-    <div class="d-flex justify-content-center gap-3">
-        <input type="text" name="cpf" class="form-control w-25" placeholder="Digite o CPF" required>
-        <button class="btn btn-warning px-4">Buscar</button>
+    <form method="post" action="{{ url_for('buscar_passageiro_cpf') }}" class="mb-5">
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <input type="text" name="cpf" class="form-control w-50" placeholder="Digite o CPF" required>
+            <button class="btn btn-orange px-4">Buscar</button>
+        </div>
+    </form>
+
+    {% if passageiro %}
+    <div class="card mx-auto" style="max-width: 500px;">
+    <!-- Header laranja elegante -->
+    <div class="card-header text-white text-center fw-bold" 
+         style="background-color: #ff9f1c; border-top-left-radius: 15px; border-top-right-radius: 15px; font-size: 1.25rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        Passageiro Encontrado
     </div>
-</form>
 
-{% if passageiro %}
-<div class="card mx-auto" style="max-width: 400px;">
     <div class="card-body">
-        <h5 class="card-title text-warning">Passageiro Encontrado</h5>
-        <p><strong>Nome:</strong> {{ passageiro.nome }}</p>
-        <p><strong>CPF:</strong> {{ passageiro.cpf }}</p>
-        <p><strong>Voo:</strong> {{ passageiro.voo }}</p>
-        <p><strong>Origem:</strong> {{ passageiro.origem }}</p>
-        <p><strong>Destino:</strong> {{ passageiro.destino }}</p>
-        <p><strong>Horário:</strong> {{ passageiro.horario }}</p>
+        <ul class="list-group list-group-flush">
+            <li class="list-group-item"><strong>Nome:</strong> {{ passageiro.nome }}</li>
+            <li class="list-group-item"><strong>CPF:</strong> {{ passageiro.cpf }}</li>
+            <li class="list-group-item"><strong>Voo:</strong> {{ passageiro.voo }}</li>
+            <li class="list-group-item"><strong>Origem:</strong> {{ passageiro.origem }}</li>
+            <li class="list-group-item"><strong>Destino:</strong> {{ passageiro.destino }}</li>
+            <li class="list-group-item"><strong>Horário:</strong> {{ passageiro.horario }}</li>
+        </ul>
     </div>
 </div>
-{% elif cpf %}
-<p class="text-center text-danger">Nenhum passageiro encontrado com o CPF {{ cpf }}.</p>
-{% endif %}
 
-<div class="text-center mt-4">
-    <a class="btn btn-secondary" href="{{ url_for('painel_admin') }}">Voltar</a>
+    {% elif cpf %}
+    <p class="text-center text-danger fs-5 mt-4">Nenhum passageiro encontrado com o CPF {{ cpf }}.</p>
+    {% endif %}
+
+    <div class="text-center mt-5">
+        <a class="btn btn-white-outline btn-lg" href="{{ url_for('painel_admin') }}">Voltar</a>
+    </div>
 </div>
 
 </body>
 </html>
+
+

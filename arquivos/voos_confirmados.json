@@ -175,5 +175,20 @@
             "nome": "alber",
             "senha": "1234"
         }
+    },
+    {
+        "assentos_disponiveis": 176,
+        "assentos_totais": 180,
+        "codigo": "ED300",
+        "confirmado": true,
+        "data": "2026-02-04",
+        "destino": "Salvador",
+        "horario": "09:35",
+        "origem": "Porto Alegre",
+        "preco": 455.5,
+        "usuario": {
+            "nome": "cibele",
+            "senha": "abc"
+        }
     }
 ]
