@@ -120,25 +120,18 @@
                 </li>
 
                 <!-- BUSCAR PASSAGEIRO -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+               <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('buscar_passageiro_cpf') }}">
                         <i class="fa-solid fa-id-card me-1"></i> Buscar Passageiro
                     </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ url_for('buscar_passageiro_cpf') }}">Buscar por CPF</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('buscar_passageiro_nome') }}">Buscar por Nome</a></li>
-                    </ul>
                 </li>
-
+                
                 <!-- LISTAR PASSAGEIROS -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('listar_passageiros_cpf') }}">
                         <i class="fa-solid fa-list me-1"></i> Listar Passageiros
+
                     </a>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ url_for('listar_passageiros_cpf') }}">Listar por CPF</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('listar_passageiros_nome') }}">Listar por Nome</a></li>
-                    </ul>
                 </li>
 
                 <!-- SAIR -->

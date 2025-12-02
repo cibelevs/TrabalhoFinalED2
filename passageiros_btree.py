@@ -38,6 +38,7 @@ class PassageirosBTree:
     def buscar(self, chave):
         return self.btree.buscar(str(chave))
 
+    
     # Listagem ordenada de todos os passageiros
     def listar(self):
         return self.btree.listar_chave_valor()

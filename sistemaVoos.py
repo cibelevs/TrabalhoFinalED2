@@ -913,19 +913,18 @@ def index():
 # PAINEL DO ADM — LISTAR PASSAGEIROS POR VOO
 
 # --- ROTAS PARA BUSCA / LISTAGEM DE PASSAGEIROS (BTree) ---
-@app.route('/buscar_passageiro_cpf')
+@app.route('/buscar_passageiro_cpf', methods=['GET', 'POST'])
 def buscar_passageiro_cpf():
-    cpf = request.args.get('cpf', '').strip()
+    if request.method == 'POST':
+        cpf = request.form.get('cpf', '').strip()
+    else:
+        cpf = request.args.get('cpf', '').strip()
+
     passageiro = passageiros_db_cpf.buscar(cpf)
     return render_template('buscar_passageiro_cpf.html', passageiro=passageiro, cpf=cpf)
 
-@app.route('/buscar_passageiro_nome')
-def buscar_passageiro_nome():
-    nome = request.args.get('nome', '').strip().upper()
-    passageiro = passageiros_db_nome.buscar(nome)
-    return render_template('buscar_passageiro_nome.html', passageiro=passageiro, nome=nome)
 
-
+# Rota para buscar por nome
 
 
 @app.route('/listar_passageiros_cpf')
@@ -934,15 +933,6 @@ def listar_passageiros_cpf():
     # Ordenar por CPF
     lista_cpf = sorted(passageiros, key=lambda p: p['cpf'])
     return render_template('listar_passageiros_cpf.html', lista_cpf=lista_cpf)
-
-# Exemplo para listar passageiros ordenados por Nome
-@app.route('/listar_passageiros_nome')
-def listar_passageiros_nome():
-    passageiros = carregar_passageiros()
-    # Ordenar por Nome
-    lista_nome = sorted(passageiros, key=lambda p: p['nome'].lower())
-    return render_template('listar_passageiros_nome.html', lista_nome=lista_nome)
-
 
 
 def carregar_passageiros_csv_dupla(caminho, arvore_cpf, arvore_nome):
