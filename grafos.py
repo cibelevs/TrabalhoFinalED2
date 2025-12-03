@@ -207,6 +207,61 @@ def melhor_rota():
 
 
 
+@app.route("/todas_rotas", methods=["GET", "POST"])
+def todas_rotas():
+    erro = None
+    mapa = None
+
+    if request.method == "POST":
+        origem = normalizar_iata(request.form["origem"])
+        destino = normalizar_iata(request.form["destino"])
+
+        if not origem or not destino:
+            erro = "Cidade ou código IATA inválido."
+        else:
+            G = gerar_grafo_rotas()
+
+            try:
+                caminhos = list(nx.all_simple_paths(G, origem, destino))
+
+                if not caminhos:
+                    erro = "Nenhum caminho encontrado."
+                else:
+                    airports = load("IATA")
+                    mapa = folium.Map(location=[-15, -50], zoom_start=4)
+
+                    cores = ["red", "blue", "green", "purple", "orange", "black"]
+
+                    # Desenhar cada caminho
+                    for i, path in enumerate(caminhos):
+                        coords = coordenadas_rota(path)
+
+                        folium.PolyLine(
+                            coords,
+                            weight=4,
+                            opacity=0.8,
+                            color=cores[i % len(cores)],
+                            tooltip=" → ".join(path)
+                        ).add_to(mapa)
+
+                    # Adicionar marcadores dos aeroportos
+                    for codigo in G.nodes():
+                        info = airports.get(codigo)
+                        if info:
+                            folium.Marker(
+                                [info["lat"], info["lon"]],
+                                popup=codigo
+                            ).add_to(mapa)
+
+                    mapa.save("static/todas_rotas.html")
+
+            except nx.NetworkXNoPath:
+                erro = "Não existe rota entre esses aeroportos."
+
+    return render_template("todas_rotas.html", erro=erro, mapa=mapa)
+
+
+
 # ============================================================
 # 7. Mapa REAL com aeroportos e rotas
 # ============================================================

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Todas as Rotas Possíveis</title>
+
+    <style>
+        body { text-align: center; font-family: Arial; }
+        input, button { padding: 8px; margin: 5px; font-size: 16px; }
+        iframe {
+            width: 90%;
+            height: 700px;
+            border: 2px solid #333;
+            margin-top: 20px;
+        }
+        .erro { color: red; font-size: 18px; }
+    </style>
+</head>
+<body>
+
+<h1>Todos os Caminhos Possíveis</h1>
+
+<form method="POST">
+    Origem: <input type="text" name="origem" required>
+    Destino: <input type="text" name="destino" required>
+    <button type="submit">Gerar Caminhos</button>
+</form>
+
+{% if erro %}
+<p class="erro">{{ erro }}</p>
+{% endif %}
+
+{% if mapa %}
+<iframe src="/static/todas_rotas.html"></iframe>
+{% endif %}
+
+<div style="margin-top:30px;">
+    <a href="/grafo_rotas">Ver Grafo</a> |
+    <a href="/melhor_rota">Melhor Rota</a> |
+    <a href="/grafo_imagem">Mapa Geral</a>
+</div>
+
+</body>
+</html>
