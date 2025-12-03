@@ -1,0 +1,19 @@
+Como rodar o settings_system_daydream
+
+1. Ative o ambiente virtual (venv):
+   source venv/bin/activate
+   (ou o equivalente para o seu sistema operacional)
+
+2. Execute o programa principal:
+   python grafos.py
+
+3. Caso apareça erro de módulos ausentes, instale as dependências abaixo:
+   flask
+   networkx
+   folium
+   airportsdata
+   pandas
+
+como instalar:   pip install flask networkx folium airportsdata pandas
+
+4. Execute novamente:    python grafos.py
