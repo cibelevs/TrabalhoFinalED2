@@ -5,7 +5,7 @@ Como rodar o settings_system_daydream
    (ou o equivalente para o seu sistema operacional)
 
 2. Execute o programa principal:
-   python grafos.py
+   python  python grafos.py sistemaVoos.py
 
 3. Caso apareça erro de módulos ausentes, instale as dependências abaixo:
    flask
@@ -16,4 +16,7 @@ Como rodar o settings_system_daydream
 
 como instalar:   pip install flask networkx folium airportsdata pandas
 
-4. Execute novamente:    python grafos.py
+4. Execute novamente:     python grafos.py sistemaVoos.py
+OBS: login e senha do administrador são unicos!
+login: admin
+senha:123
