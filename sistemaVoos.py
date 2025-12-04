@@ -41,11 +41,9 @@ def carregar_voos():
 
             for v in voos:
 
-                # Caso tenha "assentos" → vira assentos_totais
                 if "assentos" in v:
                     v["assentos_totais"] = v.pop("assentos")
 
-                # Se existir assentos_disponiveis, senão iguala ao total
                 if "assentos_disponiveis" not in v:
                     v["assentos_disponiveis"] = v.get("assentos_totais", 0)
 
@@ -117,7 +115,6 @@ def carregar_passageiros():
             writer.writerow(["nome","cpf","voo","origem","destino","horario"])
         return []  # nenhum passageiro por enquanto
 
-    # Agora o arquivo existe e tem cabeçalho → ler com segurança
     df = pd.read_csv(caminho)
     df = df.fillna("")
     return df.to_dict(orient="records")
@@ -173,12 +170,12 @@ def login_usuario_post():
     nome = request.form.get('nome')
     senha = request.form.get('senha')
 
-    usuarios = carregar_usuarios()  # função que lê usuarios.text
+    usuarios = carregar_usuarios()  
 
     # procura usuário com nome e senha corretos
     usuario_valido = next((u for u in usuarios if u.get('nome') == nome and u.get('senha') == senha), None)
     if usuario_valido:
-        session["usuario_logado"] = usuario_valido  # salva dict completo
+        session["usuario_logado"] = usuario_valido  
         session.modified = True
         return redirect(url_for('painel_usuario'))
 
@@ -218,8 +215,7 @@ def login():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("index"))   # Volta para o menu
-
+    return redirect(url_for("index"))  
 # ROTAS DO PAINEL ADMINISTRATIVO
 # -----------------------
 
@@ -399,11 +395,9 @@ def adicionar_voos_usuario():
 
     codigo = session.get("codigo_voo_selecionado")
 
-    # CARREGAR VOOS DO ARQUIVO
     todos = carregar_voos()
     voo = next((v for v in todos if v["codigo"] == codigo), None)
 
-    # GARANTIR E BUSCAR PASSAGEIROS DO VOO
     passageiros_existentes = []
     if "passageiros_voo" in session and codigo in session["passageiros_voo"]:
         passageiros_existentes = session["passageiros_voo"][codigo]
@@ -421,7 +415,6 @@ def adicionar_voo_usuario(codigo_voo):
     if not usuario:
         return False
 
-    # Carrega lista de voos disponíveis
     todos = carregar_voos()
     voo = next((v for v in todos if v["codigo"] == codigo_voo), None)
 
@@ -441,7 +434,7 @@ def adicionar_voo_usuario(codigo_voo):
 # Adiciona/Sobrescreve informações específicas do usuário e status
     novo_voo["usuario"] = usuario # Adiciona a informação de quem adicionou
     novo_voo["confirmado"] = False # Marca como pendente
-    novo_voo["passageiros"] = [] # Inicializa lista de passageiros (opcional)
+    novo_voo["passageiros"] = [] 
 
     meus_voos.append(novo_voo)
 
@@ -627,11 +620,9 @@ def confirmar_voo(codigo):
         flash("Faça login para continuar.", "erro")
         return redirect(url_for("login_usuario"))
 
-    #  Pegar passageiros registrados na sessão (lista daquele voo)
     passageiros_registrados = session.get("passageiros_voo", {}).get(codigo, [])
 
-    # ====================================================================
-    # 🔥 Busca o CPF do responsável na lista de passageiros
+    # Busca o CPF do responsável na lista de passageiros
     # ====================================================================
     cpf_responsavel_sessao = next(
         (p["cpf"] for p in passageiros_registrados if p.get("tipo") == "responsavel"),
@@ -660,8 +651,7 @@ def confirmar_voo(codigo):
 
     registros_para_csv = []
 
-    # ====================================================================
-    # 1️⃣ Salvar RESPONSÁVEL (apenas 1 vez)
+    # Salvar RESPONSÁVEL (apenas 1 vez)
     # ====================================================================
     nome_responsavel = next(
     (p["nome"] for p in passageiros_registrados if p.get("tipo") == "responsavel"),
@@ -688,16 +678,14 @@ def confirmar_voo(codigo):
     ])
     
 
-    # ====================================================================
-    # 2️⃣ Remover o responsável da lista → evita duplicação
+    # Remover o responsável da lista → evita duplicação
     # ====================================================================
     passageiros_filtrados = [
         p for p in passageiros_registrados
         if p["cpf"] != cpf_usuario
     ]
 
-    # ====================================================================
-    # 3️⃣ Salvar SOMENTE passageiros adicionais
+    # Salvar passageiros adicionais
     # ====================================================================
     for p in passageiros_filtrados:
         pass_obj = passageiros_db_cpf.criar_passageiro(
@@ -713,7 +701,6 @@ def confirmar_voo(codigo):
 
 
 
-        # 👉 AGORA SALVA NOME + CPF + DEMAIS DADOS
         registros_para_csv.append([
         p["nome"],
         p["cpf"],
@@ -726,13 +713,11 @@ def confirmar_voo(codigo):
 
     salvar_passageiros_csv(registros_para_csv)
 
-    # ====================================================================
-    # 4️⃣ Contar passageiros corretamente (sem duplicar responsável)
+    # Contar passageiros corretamente (sem duplicar responsável)
     # ====================================================================
     qtd_passageiros = 1 + len(passageiros_filtrados)
 
-    # ====================================================================
-    # 5️⃣ Atualizar assentos
+    # Atualizar assentos
     # ====================================================================
     voo["assentos_disponiveis"] -= qtd_passageiros
 
@@ -825,10 +810,7 @@ def remover_voo_confirmado(codigo):
 
     salvar_voos_confirmados(voos_restante)
 
-    # ==========================================================
-    # 🔥 Remover passageiros do CSV correto: arquivos/passageiros.csv
-    # ==========================================================
-
+   
     import csv
     import os
 
@@ -858,7 +840,6 @@ def remover_voo_confirmado(codigo):
     with open(caminho_csv, "w", newline="", encoding="utf-8") as arq:
         escritor = csv.writer(arq)
         escritor.writerows(linhas_restantes)
-    # ==========================================================
 
     flash("Voo cancelado e passageiros removidos com sucesso. Taxa de R$ 150,00 aplicada.", "warning")
     return redirect(url_for("voos_confirmados"))

@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <title>Melhor Rota</title>
 
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
@@ -82,14 +81,12 @@
             // Se já existir mapa, remove
             if (mapa !== null) mapa.remove();
 
-            // Criar mapa novo usando a origem
             mapa = L.map('mapa').setView([coords[0][0], coords[0][1]], 5);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 18
             }).addTo(mapa);
 
-            // Ícone de avião
             const aviaoIcon = L.icon({
                 iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
                 iconSize: [40, 40]
@@ -98,7 +95,6 @@
             // Marcador do avião
             let aviao = L.marker([coords[0][0], coords[0][1]], { icon: aviaoIcon }).addTo(mapa);
 
-            // Desenhar linha da rota
             let linha = L.polyline(coords.map(p => [p[0], p[1]]), {
                 color: "blue",
                 weight: 3
@@ -113,7 +109,7 @@
                 mapa.panTo([coords[i][0], coords[i][1]]);
 
                 i++;
-                setTimeout(mover, 1000); // velocidade da animação
+                setTimeout(mover, 1000); 
             }
 
             mover();

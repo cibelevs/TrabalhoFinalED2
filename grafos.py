@@ -7,7 +7,6 @@ import folium
 
 from folium.plugins import MarkerCluster
 
-# ============================================================
 # 1. MAPEAMENTO COMPLETO (CIDADE → IATA)
 # ============================================================
 IATA_MAP = {
@@ -70,7 +69,6 @@ CIDADE_REAL = {
     "CGB": "Cuiabá",
     "GYN": "Goiânia",
     "IGU": "Foz do Iguaçu",
-    # internacionais se você usar:
     "MIA": "Miami",
     "MCO": "Orlando",
     "JFK": "Nova York",
@@ -101,7 +99,6 @@ def coordenadas_rota(rota):
 
 
 
-# ============================================================
 # 2. Função para normalizar o nome e obter o IATA
 # ============================================================
 def normalizar_iata(valor):
@@ -111,7 +108,7 @@ def normalizar_iata(valor):
     return IATA_MAP.get(valor, None)
 
 
-# ============================================================
+
 # 3. Distância Haversine
 # ============================================================
 def distancia(lat1, lon1, lat2, lon2):
@@ -122,7 +119,7 @@ def distancia(lat1, lon1, lat2, lon2):
     return R * 2 * atan2(sqrt(a), sqrt(1 - a))
 
 
-# ============================================================
+
 # 4. Gerar o grafo redes de rotas
 # ============================================================
 def gerar_grafo_rotas():
@@ -158,7 +155,6 @@ def gerar_grafo_rotas():
     return G
 
 
-# ============================================================
 # 5. Página tabela de rotas
 # ============================================================
 @app.route("/grafo_rotas")
@@ -170,12 +166,8 @@ def grafo_rotas():
 
 
 
-# ============================================================
 # 6. Melhor rota entre dois pontos
 # ============================================================
-
-
-
 
 
 @app.route("/melhor_rota", methods=["GET", "POST"])
@@ -183,7 +175,7 @@ def melhor_rota():
     rota = []
     dist = None
     erro = None
-    coords = None   # <---- adicionar isso
+    coords = None   
 
     if request.method == "POST":
         origem = normalizar_iata(request.form["origem"])
@@ -262,7 +254,6 @@ def todas_rotas():
 
 
 
-# ============================================================
 # 7. Mapa REAL com aeroportos e rotas
 # ============================================================
 @app.route("/grafo_imagem")
@@ -305,7 +296,6 @@ def grafo_imagem():
     return '<iframe src="/static/grafo_mapa.html" width="100%" height="800px"></iframe>'
 
 
-# ============================================================
 # 8. Main
 # ============================================================
 if __name__ == "__main__":

@@ -44,7 +44,6 @@
             color: var(--laranja-escuro);
         }
 
-        /* Cards do dashboard */
         .dashboard-card {
             background: white;
             border-radius: 16px;
@@ -112,14 +111,12 @@
         <div class="collapse navbar-collapse justify-content-end" id="menu">
             <ul class="navbar-nav">
 
-                <!-- CONSULTAR E EDITAR VOOS -->
                 <li class="nav-item">
                     <a class="nav-link" href="{{ url_for('voos_usuario') }}">
                         <i class="fa-solid fa-plane-departure me-1"></i> Consultar e Editar Voos
                     </a>
                 </li>
 
-                <!-- BUSCAR PASSAGEIRO -->
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                         <i class="fa-solid fa-id-card me-1"></i> Buscar Passageiro
@@ -130,7 +127,6 @@
                     </ul>
                 </li>
 
-                <!-- LISTAR PASSAGEIROS -->
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
                         <i class="fa-solid fa-list me-1"></i> Listar Passageiros
@@ -141,7 +137,6 @@
                     </ul>
                 </li>
 
-                <!-- SAIR -->
                 <li class="nav-item">
                     <a class="nav-link" href="/">
                         <i class="fa-solid fa-right-from-bracket me-1"></i> Sair
@@ -155,10 +150,8 @@
 
 <div class="container container-main">
 
-    <!-- TÍTULO -->
     <h2 class="text-center mb-4">Painel do Administrador</h2>
 
-    <!-- INFO SOBRE CÓDIGOS -->
     <div class="shadow-sm text-center mb-5 p-3 rounded"
          style="background-color: #fff3e0; border-left: 6px solid var(--laranja); font-size: 1.05rem;">
         <i class="fa-solid fa-circle-info me-2" style="color: var(--laranja-escuro);"></i>
@@ -166,7 +159,6 @@
         voos <strong>Internacionais</strong> começam com <strong>IN</strong>.
     </div>
 
-    <!-- FLASH MESSAGES -->
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         <div>
@@ -180,7 +172,6 @@
     {% endif %}
     {% endwith %}
 
-    <!-- DASHBOARD CARDS -->
     <div class="row g-4 mb-5">
         <div class="col-md-3">
             <div class="dashboard-card text-center">
@@ -223,7 +214,6 @@
         </div>
     </div>
 
-    <!-- FORMULÁRIO DE ADIÇÃO DE VOOS -->
     <div class="card mb-4">
         <div class="card-header"><i class="fa-solid fa-plus me-2"></i> Adicionar Novo Voo</div>
 
@@ -268,7 +258,6 @@
         </div>
     </div>
 
-    <!-- TABELA COMPLETA DE VOOS -->
     <div class="card">
         <div class="card-header"><i class="fa-solid fa-table me-2"></i> Voos Registrados</div>
 

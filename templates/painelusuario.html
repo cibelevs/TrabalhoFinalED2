@@ -98,7 +98,6 @@
 
 <body>
 
-<!-- Navbar -->
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
         <a class="navbar-brand" href="/">✈ Sistema de Controle de Voos</a>
@@ -124,14 +123,12 @@
     </div>
 </nav>
 
-<!-- Conteúdo principal -->
 <div class="container container-main">
 
     <h2 class="text-center mb-5" style="color: var(--laranja-escuro); font-weight: 700;">
         Painel do Usuário
     </h2>
 
-    <!-- Mensagens -->
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         <div class="mb-4">
@@ -145,7 +142,6 @@
       {% endif %}
     {% endwith %}
 
-    <!-- Busca -->
     <form method="GET" action="{{ url_for('buscar_voos_usuario') }}" class="row g-3 align-items-end">
         <div class="col-md-5">
             <label class="form-label">Origem</label>
@@ -240,7 +236,6 @@
         </p>
     </div>
 
-    <!-- VOOS NÃO CONFIRMADOS -->
     <h3 class="mt-5" style="color: var(--laranja); font-weight: 700;">
         ✈ Meus Voos Não Confirmados
     </h3>
@@ -287,7 +282,6 @@
                                 <i class="fa-solid fa-pen"></i>
                             </button>
                         </form>
-                    <!-- BOTÃO SEGURO: usa data-attributes e chama abrirModalConfirmacao(this) -->
                     <button class="btn btn-outline-success btn-sm rounded-pill px-3"
                             data-codigo="{{ voo.codigo }}"
                             data-preco="{{ '%.2f' % (voo.preco|float) }}"
@@ -310,7 +304,6 @@
 
 </div>
 
-<!-- Banner final -->
 <div class="banner-final">
     <div class="banner-conteudo">
         <div>
@@ -330,7 +323,6 @@
     </p>
 </footer>
 
-<!-- MODAL CONFIRMAR VOO (ESTILO LARANJA) -->
 <div class="modal fade" id="modalConfirmarVoo" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content" style="border-top: 5px solid var(--laranja); border-radius: 15px;">
@@ -390,7 +382,6 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-// ---------- REGRAS DE PREÇO ----------
 function calcularPrecoPassageiro(passageiro, precoBase) {
     const tipo = (passageiro.tipo || "").toLowerCase();
 
@@ -423,7 +414,6 @@ function abrirModalConfirmacao(btn) {
         ...listaPassageiros
     ];
 
-    // ---- cálculo do preço ----
     let total = 0;
     let detalhePrecos = "<strong>Passageiros:</strong><br>";
 
@@ -435,18 +425,15 @@ function abrirModalConfirmacao(btn) {
 
     total = aplicarDescontoGrupo(total, listaCompleta.length);
 
-    // ---- atualiza modal ----
     document.getElementById("modalPreco").innerText = preco.toFixed(2);
     document.getElementById("modalQtd").innerText = listaCompleta.length;
     document.getElementById("modalTotal").innerText = total.toFixed(2);
 
     document.getElementById("modalListaNomes").innerHTML = detalhePrecos;
 
-    // Ajusta rota do form
     const form = document.getElementById("formConfirmarVoo");
     form.action = `/confirmar_voo/${codigo}`;
 
-    // Exibe modal
     window.modalConfirmar.show();
 }
 
