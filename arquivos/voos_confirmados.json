@@ -190,5 +190,35 @@
             "nome": "cibele",
             "senha": "abc"
         }
+    },
+    {
+        "assentos_disponiveis": 178,
+        "assentos_totais": 180,
+        "codigo": "ED605",
+        "confirmado": true,
+        "data": "2026-02-26",
+        "destino": "Foz do Iguaçu",
+        "horario": "15:30",
+        "origem": "Brasília",
+        "preco": 1150.0,
+        "usuario": {
+            "nome": "cibele",
+            "senha": "abc"
+        }
+    },
+    {
+        "assentos_disponiveis": 276,
+        "assentos_totais": 280,
+        "codigo": "IN786",
+        "confirmado": true,
+        "data": "2025-11-30",
+        "destino": "Florianópolis",
+        "horario": "07:45",
+        "origem": "Paris",
+        "preco": 2000.0,
+        "usuario": {
+            "nome": "alber",
+            "senha": "1234"
+        }
     }
 ]
